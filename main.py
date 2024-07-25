@@ -6,17 +6,20 @@ import sys
 
 def main():
     init(autoreset=True)
+
     tom = Tomarket()
 
     try:
         with open('tokens.txt', 'r') as file:
             tokens = [line.strip() for line in file.readlines()]
     except (Exception, FileNotFoundError) as e:
-        return print(f"{Fore.RED + Style.BRIGHT}[ {e} ]{Style.RESET_ALL}")
+        print(f"{Fore.RED + Style.BRIGHT}[ {e} ]{Style.RESET_ALL}")
+        pass
 
     for index, token in enumerate(tokens, start=1):
-        print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Account {index + 1} ]{Style.RESET_ALL}")
+        print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Account {index} ]{Style.RESET_ALL}")
         balance = tom.balance(token=token)
+        tom.tasks(token=token)
         tom.claim_daily(token=token)
         tom.start_farm(token=token)
         while balance['data']['play_passes'] > 0:
@@ -33,9 +36,10 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
     while True:
         try:
             main()
+        except (Exception, FileNotFoundError) as e:
+            print(f"{Fore.RED + Style.BRIGHT}[ {e} ]{Style.RESET_ALL}")
         except KeyboardInterrupt:
             sys.exit(0)

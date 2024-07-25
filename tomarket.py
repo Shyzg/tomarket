@@ -1,6 +1,6 @@
 from time import sleep
 from colorama import Fore, Style
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import pytz
 import random
@@ -67,7 +67,7 @@ class Tomarket:
             return print_timestamp(
                 f"{Fore.MAGENTA + Style.BRIGHT}[ Daily Claim ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.BLUE + Style.BRIGHT}[ Day {data['data']['today_game']} ]{Style.RESET_ALL}"
+                f"{Fore.BLUE + Style.BRIGHT}[ Day {(data['data']['today_game'] + data['data']['claim_this_time'])} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.GREEN + Style.BRIGHT}[ Points {data['data']['today_points']} ]{Style.RESET_ALL}"
             )
@@ -157,5 +157,64 @@ class Tomarket:
             response.raise_for_status()
             data = response.json()
             return print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Game Claimed {data['data']['points']} ]")
+        except (json.JSONDecodeError, requests.RequestException, Exception) as e:
+            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]")
+
+    def tasks(self, token: str):
+        url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/list'
+        try:
+            self.headers.update({
+                'Authorization': token
+            })
+            payload = {
+                'language_code': 'en'
+            }
+            response = requests.post(url=url, headers=self.headers, json=payload)
+            response.raise_for_status()
+            data = response.json()
+            for task in data['data']:
+                start = self.start_tasks(token=token, task_id=task['taskId'])
+                if start['message'] == "You haven't finished this task":
+                    print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ {task['title']} Not Finished ]{Style.RESET_ALL}")
+                elif start['message'] == "Task handle is not exist":
+                    print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {task['title']} {start['message']} ]{Style.RESET_ALL}")
+                else:
+                    finish = self.claim_tasks(token=token, task_id=task['taskId'])
+                    if finish['message'] == "You haven't start this task":
+                        self.start_tasks(token=token, task_id=task['id'])
+                    elif finish['message'] == "You haven't finished this task":
+                        print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {task['title']} Not Finished ]{Style.RESET_ALL}")
+                    else:
+                        print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ {task['title']} Finished ]{Style.RESET_ALL}")
+        except (json.JSONDecodeError, requests.RequestException, Exception) as e:
+            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]")
+
+    def start_tasks(self, token: str, task_id: int):
+        url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/start'
+        try:
+            self.headers.update({
+                'Authorization': token
+            })
+            payload = {
+                'task_id': task_id
+            }
+            response = requests.post(url=url, headers=self.headers, json=payload)
+            response.raise_for_status()
+            return response.json()
+        except (json.JSONDecodeError, requests.RequestException, Exception) as e:
+            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]")
+
+    def claim_tasks(self, token: str, task_id: int):
+        url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/claim'
+        try:
+            self.headers.update({
+                'Authorization': token
+            })
+            payload = {
+                'task_id': task_id
+            }
+            response = requests.post(url=url, headers=self.headers, json=payload)
+            response.raise_for_status()
+            return response.json()
         except (json.JSONDecodeError, requests.RequestException, Exception) as e:
             return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]")
