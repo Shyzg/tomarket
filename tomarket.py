@@ -1,6 +1,6 @@
 from time import sleep
 from colorama import Fore, Style
-from datetime import datetime, timedelta
+from datetime import datetime
 import json
 import pytz
 import random
