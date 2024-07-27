@@ -1,5 +1,6 @@
 from colorama import Fore, Style
 from datetime import datetime
+from fake_useragent import FakeUserAgent
 from time import sleep
 import pytz
 import random
@@ -22,7 +23,6 @@ class Tomarket:
             'Accept': 'application/json, text/plain, */*',
             'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
             'Connection': 'keep-alive',
-            'Cache-Control': 'no-cache',
             'Content-Type': 'application/json',
             'Host': 'api-web.tomarket.ai',
             'Origin': 'https://mini-app.tomarket.ai',
@@ -30,7 +30,7 @@ class Tomarket:
             'Sec-Fetch-Dest': 'empty',
             'Sec-Fetch-Mode': 'cors',
             'Sec-Fetch-Site': 'same-site',
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'
+            'User-Agent': FakeUserAgent().random
         }
 
     def balance(self, token: str):
@@ -111,7 +111,7 @@ class Tomarket:
             response = requests.post(url=url, headers=self.headers, json=payload)
             response.raise_for_status()
             data = response.json()
-            print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Farm Claimed {(data['data']['points'] + data['data']['claim_this_time'])} ]")
+            print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Farm Claimed {int(data['data']['points'] + data['data']['claim_this_time'])} ]")
             sleep(3)
             print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Starting Farm ]")
             return self.start_farm(token=token)

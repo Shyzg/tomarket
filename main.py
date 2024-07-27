@@ -22,7 +22,7 @@ def main():
             tom.play_game(token=token)
             balance['data']['play_passes'] -= 1
 
-    for _ in range(5 * 60 + 10, 0, -1):
+    for _ in range(3 * 3600, 0, -1):
         hours, remainder = divmod(_, 3600)
         minutes, seconds = divmod(remainder, 60)
         print(f"{Fore.YELLOW + Style.BRIGHT}[ {int(hours)} Hours {int(minutes)} Minutes {int(seconds)} Seconds Remaining To Process All Account ]{Style.RESET_ALL}", end="\r", flush=True)
