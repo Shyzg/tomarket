@@ -135,9 +135,7 @@ class Tomarket:
             total_time = end_time - start_time
             total_seconds = total_time.total_seconds()
             print_timestamp(f"{Fore.BLUE + Style.BRIGHT}[ Game Started Please Wait {int(total_seconds)} Seconds ]{Style.RESET_ALL}")
-            sleep(30)
-            print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Game Ended ]{Style.RESET_ALL}")
-            sleep(3)
+            sleep(33)
             return self.claim_game(token=token, point=random.randint(1, 600))
         except (Exception, requests.JSONDecodeError, requests.RequestException) as e:
             return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]{Style.RESET_ALL}")
