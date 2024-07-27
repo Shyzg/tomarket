@@ -1,7 +1,6 @@
-from time import sleep
 from colorama import Fore, Style
 from datetime import datetime
-import json
+from time import sleep
 import pytz
 import random
 import requests
@@ -49,8 +48,8 @@ class Tomarket:
                 f"{Fore.BLUE + Style.BRIGHT}[ Play Passes {data['data']['play_passes']} ]{Style.RESET_ALL}"
             )
             return data
-        except (json.JSONDecodeError, requests.RequestException, Exception) as e:
-            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]")
+        except (Exception, requests.JSONDecodeError, requests.RequestException) as e:
+            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]{Style.RESET_ALL}")
 
     def claim_daily(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/daily/claim'
@@ -67,12 +66,12 @@ class Tomarket:
             return print_timestamp(
                 f"{Fore.MAGENTA + Style.BRIGHT}[ Daily Claim ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.BLUE + Style.BRIGHT}[ Day {(data['data']['today_game'] + data['data']['claim_this_time'])} ]{Style.RESET_ALL}"
+                f"{Fore.BLUE + Style.BRIGHT}[ Day {data['data']['today_game']} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.GREEN + Style.BRIGHT}[ Points {data['data']['today_points']} ]{Style.RESET_ALL}"
             )
-        except (json.JSONDecodeError, requests.RequestException, Exception) as e:
-            return None
+        except (Exception, requests.JSONDecodeError, requests.RequestException) as e:
+            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]{Style.RESET_ALL}")
 
     def start_farm(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/farm/start'
@@ -97,8 +96,8 @@ class Tomarket:
                 print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Claiming Farm ]")
                 sleep(3)
                 return self.claim_farm(token=token)
-        except (json.JSONDecodeError, requests.RequestException, Exception) as e:
-            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]")
+        except (Exception, requests.JSONDecodeError, requests.RequestException) as e:
+            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]{Style.RESET_ALL}")
 
     def claim_farm(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/farm/claim'
@@ -112,12 +111,12 @@ class Tomarket:
             response = requests.post(url=url, headers=self.headers, json=payload)
             response.raise_for_status()
             data = response.json()
-            print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Farm Claimed {data['data']['points']} ]")
+            print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Farm Claimed {(data['data']['points'] + data['data']['claim_this_time'])} ]")
             sleep(3)
             print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Starting Farm ]")
             return self.start_farm(token=token)
-        except (json.JSONDecodeError, requests.RequestException, Exception) as e:
-            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]")
+        except (Exception, requests.JSONDecodeError, requests.RequestException) as e:
+            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]{Style.RESET_ALL}")
 
     def play_game(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/game/play'
@@ -140,8 +139,8 @@ class Tomarket:
             print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Game Ended ]{Style.RESET_ALL}")
             sleep(3)
             return self.claim_game(token=token, point=random.randint(1, 600))
-        except (json.JSONDecodeError, requests.RequestException, Exception) as e:
-            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]")
+        except (Exception, requests.JSONDecodeError, requests.RequestException) as e:
+            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]{Style.RESET_ALL}")
 
     def claim_game(self, token: str, point: int):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/game/claim'
@@ -157,8 +156,8 @@ class Tomarket:
             response.raise_for_status()
             data = response.json()
             return print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Game Claimed {data['data']['points']} ]")
-        except (json.JSONDecodeError, requests.RequestException, Exception) as e:
-            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]")
+        except (Exception, requests.JSONDecodeError, requests.RequestException) as e:
+            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]{Style.RESET_ALL}")
 
     def tasks(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/list'
@@ -179,15 +178,15 @@ class Tomarket:
                 elif start['message'] == "Task handle is not exist":
                     print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {task['title']} {start['message']} ]{Style.RESET_ALL}")
                 else:
-                    finish = self.claim_tasks(token=token, task_id=task['taskId'])
-                    if finish['message'] == "You haven't start this task":
+                    claim = self.claim_tasks(token=token, task_id=task['taskId'])
+                    if claim['message'] == "You haven't start this task":
                         self.start_tasks(token=token, task_id=task['id'])
-                    elif finish['message'] == "You haven't finished this task":
+                    elif claim['message'] == "You haven't finished this task":
                         print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {task['title']} Not Finished ]{Style.RESET_ALL}")
                     else:
                         print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ {task['title']} Finished ]{Style.RESET_ALL}")
-        except (json.JSONDecodeError, requests.RequestException, Exception) as e:
-            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]")
+        except (Exception, requests.JSONDecodeError, requests.RequestException) as e:
+            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]{Style.RESET_ALL}")
 
     def start_tasks(self, token: str, task_id: int):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/start'
@@ -201,8 +200,8 @@ class Tomarket:
             response = requests.post(url=url, headers=self.headers, json=payload)
             response.raise_for_status()
             return response.json()
-        except (json.JSONDecodeError, requests.RequestException, Exception) as e:
-            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]")
+        except (Exception, requests.JSONDecodeError, requests.RequestException) as e:
+            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]{Style.RESET_ALL}")
 
     def claim_tasks(self, token: str, task_id: int):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/claim'
@@ -216,5 +215,5 @@ class Tomarket:
             response = requests.post(url=url, headers=self.headers, json=payload)
             response.raise_for_status()
             return response.json()
-        except (json.JSONDecodeError, requests.RequestException, Exception) as e:
-            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]")
+        except (Exception, requests.JSONDecodeError, requests.RequestException) as e:
+            return print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]{Style.RESET_ALL}")
