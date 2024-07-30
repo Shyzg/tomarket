@@ -53,8 +53,7 @@ class Tomarket:
         tokens = set()
         async with aiohttp.ClientSession(headers=self.headers) as session:
             try:
-                with open('queries.txt', 'r') as file:
-                    queries = [line.strip() for line in file.readlines()]
+                queries = [line.strip() for line in open('queries.txt', 'r').readlines()]
 
                 for query in queries:
                     parsed_query = self.parse_query(query)
