@@ -1,34 +1,31 @@
 from colorama import Fore, Style, init
-from time import sleep
 from tomarket import Tomarket, print_timestamp
+import asyncio
 import sys
 
 
-def main():
+async def main():
     init(autoreset=True)
 
     tom = Tomarket()
-    tokens = tom.user_login()
+    tokens = await tom.user_login()
 
     for (token, username) in tokens:
         print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {username} ]{Style.RESET_ALL}")
-        tom.claim_daily(token=token)
-        tom.user_balance(token=token)
-        tom.start_farm(token=token)
-        tom.list_tasks(token=token)
+        await tom.claim_daily(token=token)
+        await tom.user_balance(token=token)
+        await tom.start_farm(token=token)
+        await tom.list_tasks(token=token)
 
-    delay = int(4 * 3600)
-    hours, remainder = divmod(delay, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    print(f"{Fore.YELLOW + Style.BRIGHT}[ Restarting In {int(hours)} Hours {int(minutes)} Minutes {int(seconds)} Seconds ]{Style.RESET_ALL}")
-    sleep(delay)
+    print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Restarting Soon ]{Style.RESET_ALL}")
+    await asyncio.sleep(2 * 3600)
 
 
 if __name__ == '__main__':
     while True:
         try:
-            main()
+            asyncio.run(main())
         except Exception as e:
-            print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {e} ]{Style.RESET_ALL}")
+            print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {str(e)} ]{Style.RESET_ALL}")
         except KeyboardInterrupt:
             sys.exit(0)
