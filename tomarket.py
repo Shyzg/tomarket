@@ -208,23 +208,23 @@ class Tomarket:
                         if not 'special' in task['tag']:
                             if task['status'] == 0 and task['type'] == "mysterious":
                                 print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming {task['title']} ]{Style.RESET_ALL}")
-                                self.claim_tasks(token=token, task_id=task['taskId'])
+                                await self.claim_tasks(token=token, task_id=task['taskId'])
                             elif task['status'] == 0:
                                 print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Starting {task['title']} ]{Style.RESET_ALL}")
-                                start_task = self.start_tasks(token=token, task_id=task['taskId'])
+                                start_task = await self.start_tasks(token=token, task_id=task['taskId'])
                                 if start_task['data']['status'] == 1:
                                     print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Checking {task['title']} ]{Style.RESET_ALL}")
-                                    asyncio.sleep(task['waitSecond'] + 3)
-                                    self.check_tasks(token=token, task_id=task['taskId'])
+                                    await asyncio.sleep(task['waitSecond'] + 3)
+                                    await self.check_tasks(token=token, task_id=task['taskId'])
                                 elif start_task['data']['status'] == 2:
                                     print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming {task['title']} ]{Style.RESET_ALL}")
-                                    self.claim_tasks(token=token, task_id=task['taskId'])
+                                    await self.claim_tasks(token=token, task_id=task['taskId'])
                             elif task['status'] == 1:
                                 print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ You Haven't Finish Or Start This {task['title']} Task ]{Style.RESET_ALL}")
-                                self.check_tasks(token=token, task_id=task['taskId'])
+                                await self.check_tasks(token=token, task_id=task['taskId'])
                             elif task['status'] == 2:
                                 print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming {task['title']} ]{Style.RESET_ALL}")
-                                self.claim_tasks(token=token, task_id=task['taskId'])
+                                await self.claim_tasks(token=token, task_id=task['taskId'])
             except (Exception, aiohttp.ClientResponseError) as e:
                 print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {str(e)} ]{Style.RESET_ALL}")
 
@@ -246,11 +246,11 @@ class Tomarket:
             try:
                 data = await self.request(session, 'POST', url, json=payload)
                 if data['data']['status'] == 0:
-                    self.start_tasks(token=token, task_id=task_id)
+                    await self.start_tasks(token=token, task_id=task_id)
                 elif data['data']['status'] == 1:
                     print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ This Task Still Haven't Finished Or Started ]{Style.RESET_ALL}")
                 elif data['data']['status'] == 2:
-                    self.claim_tasks(token=token, task_id=task_id)
+                    await self.claim_tasks(token=token, task_id=task_id)
             except (Exception, aiohttp.ClientResponseError) as e:
                 print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {str(e)} ]{Style.RESET_ALL}")
 
