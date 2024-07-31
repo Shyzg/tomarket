@@ -8,14 +8,14 @@ async def main():
     init(autoreset=True)
 
     tom = Tomarket()
-    tokens = await tom.user_login()
+    tokens = tom.user_login()
 
     for (token, username) in tokens:
         print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {username} ]{Style.RESET_ALL}")
-        await tom.claim_daily(token=token)
-        await tom.user_balance(token=token)
-        await tom.start_farm(token=token)
-        await tom.list_tasks(token=token)
+        tom.claim_daily(token=token)
+        tom.user_balance(token=token)
+        tom.start_farm(token=token)
+        tom.list_tasks(token=token)
 
     print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Restarting Soon ]{Style.RESET_ALL}")
     await asyncio.sleep(2 * 3600)
