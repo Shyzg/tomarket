@@ -208,8 +208,8 @@ async def main():
 
     tokens = [line.strip() for line in open('tokens.txt', 'r').readlines()]
 
-    for (token, username) in tokens:
-        print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {username} ]{Style.RESET_ALL}")
+    for index, token in enumerate(tokens):
+        print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Account {index + 1} ]{Style.RESET_ALL}")
         await claim_daily(token=token)
         await user_balance(token=token)
         await start_farm(token=token)
