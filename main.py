@@ -204,10 +204,7 @@ async def claim_tasks(token: str, task_id: int):
             print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {data['message']} ]{Style.RESET_ALL}")
 
 async def main():
-    init(autoreset=True)
-
     tokens = [line.strip() for line in open('tokens.txt', 'r').readlines()]
-
     for index, token in enumerate(tokens):
         print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Account {index + 1} ]{Style.RESET_ALL}")
         await claim_daily(token=token)
@@ -216,12 +213,13 @@ async def main():
         await list_tasks(token=token)
 
     print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Restarting Soon ]{Style.RESET_ALL}")
-    await asyncio.sleep(2 * 3600)
+    await asyncio.sleep((2 * 3600) + 10)
 
 
 if __name__ == '__main__':
     while True:
         try:
+            init(autoreset=True)
             asyncio.run(main())
         except (Exception, aiohttp.ClientResponseError) as e:
             print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {str(e)} ]{Style.RESET_ALL}")
