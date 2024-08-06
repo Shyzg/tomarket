@@ -2,4 +2,3 @@ __pycache__
 .vscode
 venv
 .DS_Store
-tomarket_without_aiohttp.py

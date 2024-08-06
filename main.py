@@ -1,6 +1,5 @@
 from colorama import Fore, Style, init
 from datetime import datetime
-from fake_useragent import FakeUserAgent
 from urllib.parse import parse_qs, unquote
 import aiohttp
 import asyncio
@@ -111,12 +110,13 @@ async def start_farm(token: str):
         if data['status'] == 0:
             print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Farm Started ]{Style.RESET_ALL}")
         elif data['status'] == 500:
-            print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Farm Already Started ]{Style.RESET_ALL}")
             if data['data']['need_time'] > 0:
+                print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Farm Already Started ]{Style.RESET_ALL}")
                 hours, remainder = divmod(data['data']['need_time'], 3600)
                 minutes, seconds = divmod(remainder, 60)
                 print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ {int(hours)} Hours {int(minutes)} Minutes {int(seconds)} Seconds To Claim Farm ]{Style.RESET_ALL}")
             else:
+                print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Farm Finished, Claiming Farm ]{Style.RESET_ALL}")
                 await claim_farm(token)
         else:
             print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {data['message']} ]{Style.RESET_ALL}")
@@ -213,7 +213,7 @@ async def main():
         await list_tasks(token=token)
 
     print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Restarting Soon ]{Style.RESET_ALL}")
-    await asyncio.sleep((2 * 3600) + 10)
+    await asyncio.sleep((3 * 3600) + 10)
 
 
 if __name__ == '__main__':
