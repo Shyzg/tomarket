@@ -1,15 +1,13 @@
-import random
-from time import sleep
-import token
-from tracemalloc import start
 from colorama import *
 from datetime import datetime
 from fake_useragent import FakeUserAgent
-import sys
+from time import sleep
 import json
 import os
 import pytz
+import random
 import requests
+import sys
 
 
 class Tomarket:
