@@ -1,0 +1,11 @@
+{
+    "accounts": [{
+            "name": "Shyzago",
+            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+        },
+        {
+            "name": "Shyzago Alpha",
+            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+        }
+    ]
+}
