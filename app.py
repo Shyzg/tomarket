@@ -184,7 +184,7 @@ class Tomarket:
         game_claim = response.json()
         if 'status' in game_claim:
             if game_claim['status'] == 0:
-                self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Game Claimed {data['data']['points']} ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Game Claimed {game_claim['data']['points']} ]{Style.RESET_ALL}")
             elif game_claim['status'] == 500 and game_claim['message'] == 'game not start':
                 self.print_timestamp(
                     f"{Fore.MAGENTA + Style.BRIGHT}[ Game Not Started ]{Style.RESET_ALL}"
