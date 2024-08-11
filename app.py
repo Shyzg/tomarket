@@ -35,7 +35,8 @@ class Tomarket:
         print(
             f"{Fore.BLUE + Style.BRIGHT}[ {timestamp} ]{Style.RESET_ALL}"
             f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-            f"{message}"
+            f"{message}",
+            flush=True
         )
 
     def daily_claim(self, token: str):
