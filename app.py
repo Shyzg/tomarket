@@ -2,6 +2,7 @@ from colorama import *
 from datetime import datetime
 from fake_useragent import FakeUserAgent
 from time import sleep
+import gc
 import json
 import os
 import pytz
@@ -12,6 +13,7 @@ import sys
 
 class Tomarket:
     def __init__(self) -> None:
+        self.session = requests.Session()
         self.headers = {
             'Accept': 'application/json, text/plain, */*',
             'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
@@ -47,7 +49,7 @@ class Tomarket:
             'Content-Length': str(len(data)),
             'Content-Type': 'application/json'
         })
-        response = requests.post(url=url, headers=self.headers, data=data)
+        response = self.session.post(url=url, headers=self.headers, data=data)
         response.raise_for_status()
         daily_claim = response.json()
         if 'status' in daily_claim:
@@ -77,7 +79,7 @@ class Tomarket:
             'Authorization': token,
             'Content-Length': '0'
         })
-        response = requests.post(url=url, headers=self.headers)
+        response = self.session.post(url=url, headers=self.headers)
         response.raise_for_status()
         return response.json()
 
@@ -89,7 +91,7 @@ class Tomarket:
             'Content-Length': str(len(data)),
             'Content-Type': 'application/json'
         })
-        response = requests.post(url=url, headers=self.headers, data=data)
+        response = self.session.post(url=url, headers=self.headers, data=data)
         response.raise_for_status()
         farm_start = response.json()
         if 'status' in farm_start:
@@ -116,7 +118,7 @@ class Tomarket:
             'Content-Length': str(len(data)),
             'Content-Type': 'application/json'
         })
-        response = requests.post(url=url, headers=self.headers, data=data)
+        response = self.session.post(url=url, headers=self.headers, data=data)
         response.raise_for_status()
         farm_claim = response.json()
         if 'status' in farm_claim:
@@ -148,7 +150,7 @@ class Tomarket:
             'Content-Length': str(len(data)),
             'Content-Type': 'application/json'
         })
-        response = requests.post(url=url, headers=self.headers, data=data)
+        response = self.session.post(url=url, headers=self.headers, data=data)
         response.raise_for_status()
         game_play = response.json()
         if 'status' in game_play:
@@ -176,7 +178,7 @@ class Tomarket:
             'Content-Length': str(len(data)),
             'Content-Type': 'application/json'
         })
-        response = requests.post(url=url, headers=self.headers, data=data)
+        response = self.session.post(url=url, headers=self.headers, data=data)
         response.raise_for_status()
         game_claim = response.json()
         if 'status' in game_claim:
@@ -201,7 +203,7 @@ class Tomarket:
             'Content-Length': str(len(data)),
             'Content-Type': 'application/json'
         })
-        response = requests.post(url=url, headers=self.headers, data=data)
+        response = self.session.post(url=url, headers=self.headers, data=data)
         response.raise_for_status()
         tasks_list = response.json()
         for category in tasks_list['data']:
@@ -243,7 +245,7 @@ class Tomarket:
             'Content-Length': str(len(data)),
             'Content-Type': 'application/json'
         })
-        response = requests.post(url=url, headers=self.headers, data=data)
+        response = self.session.post(url=url, headers=self.headers, data=data)
         response.raise_for_status()
         return response.json()
 
@@ -255,7 +257,7 @@ class Tomarket:
             'Content-Length': str(len(data)),
             'Content-Type': 'application/json'
         })
-        response = requests.post(url=url, headers=self.headers, data=data)
+        response = self.session.post(url=url, headers=self.headers, data=data)
         response.raise_for_status()
         tasks_check = response.json()
         if 'status' in tasks_check:
@@ -285,7 +287,7 @@ class Tomarket:
             'Content-Length': str(len(data)),
             'Content-Type': 'application/json'
         })
-        response = requests.post(url=url, headers=self.headers, data=data)
+        response = self.session.post(url=url, headers=self.headers, data=data)
         response.raise_for_status()
         tasks_claim = response.json()
         if 'status' in tasks_claim:
@@ -343,6 +345,7 @@ if __name__ == '__main__':
             init(autoreset=True)
             tomarket = Tomarket()
             tomarket.main()
+            gc.collect()
         except (Exception, requests.ConnectionError, requests.JSONDecodeError) as e:
             tomarket.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {str(e)} ]{Style.RESET_ALL}")
             pass
