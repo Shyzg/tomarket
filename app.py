@@ -105,17 +105,19 @@ class Tomarket:
                     now = datetime.now(pytz.timezone('Asia/Jakarta'))
                     farm_end_at = datetime.fromtimestamp(farm_start['data']['end_at'], pytz.timezone('Asia/Jakarta'))
                     if now >= farm_end_at:
+                        self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming Farm ]{Style.RESET_ALL}")
                         return self.farm_claim(token=token)
                     else:
                         timestamp_farm_end_at = farm_end_at.strftime('%X %Z')
                         return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
                 elif farm_start['status'] == 500 or farm_start['message'] == 'game already started':
-                    self.print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Farm Already Started ]{Style.RESET_ALL}")
                     now = datetime.now(pytz.timezone('Asia/Jakarta'))
                     farm_end_at = datetime.fromtimestamp(farm_start['data']['end_at'], pytz.timezone('Asia/Jakarta'))
                     if now >= farm_end_at:
+                        self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming Farm ]{Style.RESET_ALL}")
                         return self.farm_claim(token=token)
                     else:
+                        self.print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Farm Already Started ]{Style.RESET_ALL}")
                         timestamp_farm_end_at = farm_end_at.strftime('%X %Z')
                         return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
                 else:
