@@ -56,7 +56,7 @@ class Tomarket:
         if daily_claim is not None:
             if 'status' in daily_claim:
                 if daily_claim['status'] in [0, 200]:
-                    return self.print_timestamp(
+                    self.print_timestamp(
                         f"{Fore.GREEN + Style.BRIGHT}[ Daily Claimed ]{Style.RESET_ALL}"
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.YELLOW + Style.BRIGHT}[ Points {daily_claim['data']['today_points']} ]{Style.RESET_ALL}"
@@ -64,18 +64,18 @@ class Tomarket:
                         f"{Fore.BLUE + Style.BRIGHT}[ Day {daily_claim['data']['today_game']} ]{Style.RESET_ALL}"
                     )
                 elif daily_claim['status'] == 400 or daily_claim['message'] == 'already_check':
-                    return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Already Check Daily Claim ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Already Check Daily Claim ]{Style.RESET_ALL}")
                 else:
-                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error 'status' In Daily Claim ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{daily_claim['message']}' In Daily Claim ]{Style.RESET_ALL}")
             elif 'code' in daily_claim:
                 if daily_claim['code'] == 400 or daily_claim['message'] == 'claim throttle':
-                    return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Daily Claim Throttle ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Daily Claim Throttle ]{Style.RESET_ALL}")
                 else:
-                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error 'code' In Daily Claim ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{daily_claim['message']}' In Daily Claim ]{Style.RESET_ALL}")
             else:
-                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' Or 'code' In Daily Claim ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' Or 'code' In Daily Claim ]{Style.RESET_ALL}")
         else:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data In Daily Claim Is None ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data In Daily Claim Is None ]{Style.RESET_ALL}")
 
     def user_balance(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/user/balance'
@@ -106,26 +106,26 @@ class Tomarket:
                     farm_end_at = datetime.fromtimestamp(farm_start['data']['end_at'], pytz.timezone('Asia/Jakarta'))
                     if now >= farm_end_at:
                         self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming Farm ]{Style.RESET_ALL}")
-                        return self.farm_claim(token=token)
+                        self.farm_claim(token=token)
                     else:
                         timestamp_farm_end_at = farm_end_at.strftime('%X %Z')
-                        return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
+                        self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
                 elif farm_start['status'] == 500 or farm_start['message'] == 'game already started':
                     now = datetime.now(pytz.timezone('Asia/Jakarta'))
                     farm_end_at = datetime.fromtimestamp(farm_start['data']['end_at'], pytz.timezone('Asia/Jakarta'))
                     if now >= farm_end_at:
                         self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming Farm ]{Style.RESET_ALL}")
-                        return self.farm_claim(token=token)
+                        self.farm_claim(token=token)
                     else:
                         self.print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Farm Already Started ]{Style.RESET_ALL}")
                         timestamp_farm_end_at = farm_end_at.strftime('%X %Z')
-                        return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
+                        self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
                 else:
-                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error 'status' In Farm Start ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error 'status' In Farm Start ]{Style.RESET_ALL}")
             else:
-                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Farm Start ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Farm Start ]{Style.RESET_ALL}")
         else:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data In Farm Start Is None ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data In Farm Start Is None ]{Style.RESET_ALL}")
 
     def farm_claim(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/farm/claim'
@@ -154,13 +154,13 @@ class Tomarket:
                     return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error 'status' In Farm Claim Data ]{Style.RESET_ALL}")
             elif 'code' in farm_claim:
                 if farm_claim['code'] == 400 or farm_claim['message'] == 'claim throttle':
-                    return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Claim Throttle ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Claim Throttle ]{Style.RESET_ALL}")
                 else:
-                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error 'code' In Farm Claim ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{farm_claim['message']}' In Farm Claim ]{Style.RESET_ALL}")
             else:
-                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' Or 'code' In Farm Claim ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' Or 'code' In Farm Claim ]{Style.RESET_ALL}")
         else:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data Farm Claim Is None ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data Farm Claim Is None ]{Style.RESET_ALL}")
 
     def game_play(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/game/play'
@@ -179,13 +179,13 @@ class Tomarket:
                     sleep(33)
                     return self.game_claim(token=token, points=random.randint(700, 800))
                 elif game_play['status'] == 500 or game_play['message'] == 'no chance':
-                    return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ No Chance To Start Game ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ No Chance To Start Game ]{Style.RESET_ALL}")
                 else:
-                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error 'status' In Game Play ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{game_play['message']}' In Game Play ]{Style.RESET_ALL}")
             else:
-                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Game Play ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Game Play ]{Style.RESET_ALL}")
         else:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data Game Play Is None ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data Game Play Is None ]{Style.RESET_ALL}")
 
     def game_claim(self, token: str, points: int):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/game/claim'
@@ -201,20 +201,20 @@ class Tomarket:
         if game_claim is not None:
             if 'status' in game_claim:
                 if game_claim['status'] == 0:
-                    return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Game Claimed {game_claim['data']['points']} ]{Style.RESET_ALL}")
-                elif game_claim['status'] == 500 or game_claim['message'] == 'game not start':
-                    return self.game_play(token=token)
+                    self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Game Claimed {game_claim['data']['points']} ]{Style.RESET_ALL}")
+                elif game_claim['status'] == 500 and game_claim['message'] == 'game not start':
+                    self.game_play(token=token)
                 else:
-                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error 'status' In Game Claim ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{game_claim['message']}' In Game Claim ]{Style.RESET_ALL}")
             elif 'code' in game_claim:
-                if game_claim['code'] == 400 or game_claim['message'] == 'claim throttle':
-                    return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Claim Throttle ]{Style.RESET_ALL}")
+                if game_claim['code'] == 400 and game_claim['message'] == 'claim throttle':
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Claim Throttle ]{Style.RESET_ALL}")
                 else:
-                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error 'code' In Game Claim ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{game_claim['message']}' In Game Claim ]{Style.RESET_ALL}")
             else:
-                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' Or 'code' In Game Claim ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' Or 'code' In Game Claim ]{Style.RESET_ALL}")
         else:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data Game Claim Is None ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data Game Claim Is None ]{Style.RESET_ALL}")
 
     def tasks_list(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/list'
@@ -229,24 +229,20 @@ class Tomarket:
         tasks_list = response.json()
         for category in tasks_list['data']:
             for task in tasks_list['data'][category]:
-                if 'endTime' in task and task['endTime']:
-                    end_time = datetime.strptime(task['endTime'], '%Y-%m-%d %H:%M:%S')
-                    if end_time < datetime.now():
-                        continue
-                if 'walletAddress' or 'boost' in task['handleFunc']:
-                    continue
-                if task['status'] == 0 and task['type'] == "mysterious":
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming {task['title']} ]{Style.RESET_ALL}")
-                    self.tasks_claim(token=token, task_id=task['taskId'], task_title=task['title'])
-                elif task['status'] == 0:
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Starting {task['title']} ]{Style.RESET_ALL}")
-                    self.tasks_start(token=token, task_id=task['taskId'], task_title=task['title'], task_waitsecond=task['waitSecond'])
-                elif task['status'] == 1:
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ You Haven't Finish Or Start {task['title']} ]{Style.RESET_ALL}")
-                    self.tasks_check(token=token, task_id=task['taskId'], task_title=task['title'], task_waitsecond=task['waitSecond'])
-                elif task['status'] == 2:
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming {task['title']} ]{Style.RESET_ALL}")
-                    self.tasks_claim(token=token, task_id=task['taskId'], task_title=task['title'], task_waitsecond=task['waitSecond'])
+                if all(x not in task['handleFunc'] for x in ['walletAddress', 'boost']) and 'invite' not in task['platform']:
+                    wait_second = task.get('waitSecond', 0)
+                    if task['status'] == 0 and task['type'] == "mysterious":
+                        self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming {task['title']} ]{Style.RESET_ALL}")
+                        self.tasks_claim(token=token, task_id=task['taskId'], task_title=task['title'])
+                    elif task['status'] == 0:
+                        self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Starting {task['title']} ]{Style.RESET_ALL}")
+                        self.tasks_start(token=token, task_id=task['taskId'], task_title=task['title'], task_waitsecond=wait_second)
+                    elif task['status'] == 1:
+                        self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ You Haven't Finish Or Start {task['title']} ]{Style.RESET_ALL}")
+                        self.tasks_check(token=token, task_id=task['taskId'], task_title=task['title'])
+                    elif task['status'] == 2:
+                        self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming {task['title']} ]{Style.RESET_ALL}")
+                        self.tasks_claim(token=token, task_id=task['taskId'], task_title=task['title'])
 
     def tasks_start(self, token: str, task_id: int, task_title: str, task_waitsecond: int):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/start'
@@ -258,29 +254,32 @@ class Tomarket:
         })
         response = self.session.post(url=url, headers=self.headers, data=data)
         response.raise_for_status()
-        start_tasks = response.json()
-        if start_tasks is not None:
-            if 'status' in start_tasks:
-                if start_tasks['status'] == 0:
-                    if 'status' in start_tasks['data']:
-                        if start_tasks['data']['status'] == 1:
+        tasks_start = response.json()
+        if tasks_start is not None:
+            if 'status' in tasks_start:
+                if tasks_start['status'] == 0:
+                    if 'status' in tasks_start['data']:
+                        if tasks_start['data']['status'] == 1:
                             self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Checking {task_title} ]{Style.RESET_ALL}")
                             sleep(task_waitsecond + 3)
-                            self.tasks_check(token=token, task_id=task_id, task_title=task_title, task_waitsecond=task_waitsecond)
-                        elif start_tasks['data']['status'] == 2:
-                            return self.tasks_claim(token=token, task_id=task_id, task_title=task_title, task_waitsecond=task_waitsecond)
+                            self.tasks_check(token=token, task_id=task_id, task_title=task_title)
+                        elif tasks_start['data']['status'] == 2:
+                            self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming {task_title} ]{Style.RESET_ALL}")
+                            self.tasks_claim(token=token, task_id=task_id, task_title=task_title)
                     else:
-                        return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In 'data' Tasks Start ]{Style.RESET_ALL}")
-                elif start_tasks['status'] == 500 and start_tasks['message'] == 'Handle user\'s task error':
-                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Finish {task_title} By Itself ]{Style.RESET_ALL}")
+                        self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In 'data' Tasks Start ]{Style.RESET_ALL}")
+                elif tasks_start['status'] == 500 and tasks_start['message'] == 'Handle user\'s task error':
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Finish {task_title} By Itself ]{Style.RESET_ALL}")
+                elif tasks_start['status'] == 500 and tasks_start['message'] == 'Task handle is not exist':
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {task_title} Is Not Exist ]{Style.RESET_ALL}")
                 else:
-                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error 'status' In Tasks Start ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{tasks_start['message']}' In Tasks Start ]{Style.RESET_ALL}")
             else:
-                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Tasks Start ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Tasks Start ]{Style.RESET_ALL}")
         else:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data Tasks Start Is None ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data Tasks Start Is None ]{Style.RESET_ALL}")
 
-    def tasks_check(self, token: str, task_id: int, task_title: str, task_waitsecond: int):
+    def tasks_check(self, token: str, task_id: int, task_title: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/check'
         data = json.dumps({'task_id':task_id})
         self.headers.update({
@@ -296,21 +295,20 @@ class Tomarket:
                 if tasks_check['status'] == 0:
                     if 'status' in tasks_check['data']:
                         if tasks_check['data']['status'] == 1:
-                            return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ {task_title} Still Have Not Finished ]{Style.RESET_ALL}")
+                            self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ {task_title} Still Have Not Finished ]{Style.RESET_ALL}")
                         elif tasks_check['data']['status'] == 2:
-                            return self.tasks_claim(token=token, task_id=task_id, task_title=task_title, task_waitsecond=task_waitsecond)
-                        elif tasks_check['data']['status'] == 3:
-                            return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ {task_title} Already Claimed ]{Style.RESET_ALL}")
+                            self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming {task_title} ]{Style.RESET_ALL}")
+                            self.tasks_claim(token=token, task_id=task_id, task_title=task_title)
                     else:
-                        return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In 'data' Tasks Check ]{Style.RESET_ALL}")
+                        self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In 'data' Tasks Check ]{Style.RESET_ALL}")
                 else:
-                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error 'status' Tasks Check ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{tasks_check['message']}' In Tasks Check ]{Style.RESET_ALL}")
             else:
-                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Tasks Check ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Tasks Check ]{Style.RESET_ALL}")
         else:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data Tasks Check Is None ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data Tasks Check Is None ]{Style.RESET_ALL}")
 
-    def tasks_claim(self, token: str, task_id: int, task_title: str, task_waitsecond: int):
+    def tasks_claim(self, token: str, task_id: int, task_title: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/claim'
         data = json.dumps({'task_id':task_id})
         self.headers.update({
@@ -324,15 +322,19 @@ class Tomarket:
         if tasks_claim is not None:
             if 'status' in tasks_claim:
                 if tasks_claim['status'] == 0:
-                    return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ {task_title} Claimed ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ {task_title} Claimed ]{Style.RESET_ALL}")
                 elif tasks_claim['status'] == 500 and tasks_claim['message'] == 'You haven\'t start this task':
-                    return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ You Have Not Start {task_title} ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ You Have Not Start {task_title} ]{Style.RESET_ALL}")
                 elif tasks_claim['status'] == 500 and tasks_claim['message'] == 'You haven\'t finished this task':
-                    return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ You Have Not Finished {task_title} ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ You Have Not Finished {task_title} ]{Style.RESET_ALL}")
+                elif tasks_claim['status'] == 500 and tasks_claim['message'] == 'Task is not within the valid time':
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ {task_title} Is Not Within The Valid Time ]{Style.RESET_ALL}")
+                else:
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{tasks_claim['message']}' In Tasks Claim ]{Style.RESET_ALL}")
             else:
-                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Tasks Claim ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Tasks Claim ]{Style.RESET_ALL}")
         else:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data Tasks Claim Is None ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data Tasks Claim Is None ]{Style.RESET_ALL}")
 
     def main(self):
         while True:
@@ -350,17 +352,32 @@ class Tomarket:
                 )
                 # Farm
                 self.farm_start(token=account['token'])
-                # Play
-                while balance['data']['play_passes'] > 0:
-                    self.print_timestamp(
-                        f"{Fore.GREEN + Style.BRIGHT}[ Game Started ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.BLUE + Style.BRIGHT}[ Please Wait 30 Seconds ]{Style.RESET_ALL}"
-                    )
-                    self.game_play(token=account['token'])
-                    balance['data']['play_passes'] -= 1
+            self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ ————— Checking Tasks ————— ]{Style.RESET_ALL}")
+            for account in accounts:
+                self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {account['name']} ]{Style.RESET_ALL}")
                 # Tasks
                 self.tasks_list(token=account['token'])
+            self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ ————— Play Passes ————— ]{Style.RESET_ALL}")
+            for account in accounts:
+                # Play Passes
+                balance = self.user_balance(token=account['token'])
+                if balance['data']['play_passes'] != 0:
+                    while balance['data']['play_passes'] > 0:
+                        self.print_timestamp(
+                            f"{Fore.GREEN + Style.BRIGHT}[ Game Started ]{Style.RESET_ALL}"
+                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                            f"{Fore.BLUE + Style.BRIGHT}[ Please Wait 30 Seconds ]{Style.RESET_ALL}"
+                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                            f"{Fore.CYAN + Style.BRIGHT}[ {account['name']} ]{Style.RESET_ALL}"
+                        )
+                        self.game_play(token=account['token'])
+                        balance['data']['play_passes'] -= 1
+                else:
+                    self.print_timestamp(
+                        f"{Fore.RED + Style.BRIGHT}[ Not Enough Play Passes ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.CYAN + Style.BRIGHT}[ {account['name']} ]{Style.RESET_ALL}"
+                    )
             self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Restarting Soon ]{Style.RESET_ALL}")
             sleep(3 * 3600)
             self.clear_terminal()
