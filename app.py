@@ -388,13 +388,14 @@ class Tomarket:
 
 
 if __name__ == '__main__':
-    try:
-        init(autoreset=True)
-        tomarket = Tomarket()
-        tomarket.main()
-    except (Exception, requests.ConnectionError, requests.JSONDecodeError) as e:
-        tomarket.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {str(e)} ]{Style.RESET_ALL}")
-        pass
-    except KeyboardInterrupt:
-        tomarket.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ See You 👋🏻 ]{Style.RESET_ALL}")
-        sys.exit(0)
+    while True:
+        try:
+            init(autoreset=True)
+            tomarket = Tomarket()
+            tomarket.main()
+        except (Exception, requests.ConnectionError, requests.JSONDecodeError) as e:
+            tomarket.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {str(e)} ]{Style.RESET_ALL}")
+            pass
+        except KeyboardInterrupt:
+            tomarket.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ See You 👋🏻 ]{Style.RESET_ALL}")
+            sys.exit(0)
