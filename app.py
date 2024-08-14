@@ -55,7 +55,7 @@ class Tomarket:
         daily_claim = response.json()
         if daily_claim is not None:
             if 'status' in daily_claim:
-                if daily_claim['status'] in [0, 200]:
+                if daily_claim['status'] == 0:
                     self.print_timestamp(
                         f"{Fore.GREEN + Style.BRIGHT}[ Daily Claimed ]{Style.RESET_ALL}"
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -63,15 +63,15 @@ class Tomarket:
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.BLUE + Style.BRIGHT}[ Day {daily_claim['data']['today_game']} ]{Style.RESET_ALL}"
                     )
-                elif daily_claim['status'] == 400 or daily_claim['message'] == 'already_check':
+                elif daily_claim['status'] == 400 and daily_claim['message'] == 'already_check':
                     self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Already Check Daily Claim ]{Style.RESET_ALL}")
                 else:
-                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{daily_claim['message']}' In Daily Claim ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{daily_claim['message']}' Status '{daily_claim['status']}' In Daily Claim ]{Style.RESET_ALL}")
             elif 'code' in daily_claim:
                 if daily_claim['code'] == 400 or daily_claim['message'] == 'claim throttle':
                     self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Daily Claim Throttle ]{Style.RESET_ALL}")
                 else:
-                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{daily_claim['message']}' In Daily Claim ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{daily_claim['message']}' Status '{daily_claim['status']}' In Daily Claim ]{Style.RESET_ALL}")
             else:
                 self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' Or 'code' In Daily Claim ]{Style.RESET_ALL}")
         else:
@@ -100,7 +100,7 @@ class Tomarket:
         farm_start = response.json()
         if farm_start is not None:
             if 'status' in farm_start:
-                if farm_start['status'] == 0:
+                if farm_start['status'] in [0, 200]:
                     self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Farm Started ]{Style.RESET_ALL}")
                     now = datetime.now(pytz.timezone('Asia/Jakarta'))
                     farm_end_at = datetime.fromtimestamp(farm_start['data']['end_at'], pytz.timezone('Asia/Jakarta'))
@@ -110,7 +110,7 @@ class Tomarket:
                     else:
                         timestamp_farm_end_at = farm_end_at.strftime('%X %Z')
                         self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
-                elif farm_start['status'] == 500 or farm_start['message'] == 'game already started':
+                elif farm_start['status'] == 500 and farm_start['message'] == 'game already started':
                     now = datetime.now(pytz.timezone('Asia/Jakarta'))
                     farm_end_at = datetime.fromtimestamp(farm_start['data']['end_at'], pytz.timezone('Asia/Jakarta'))
                     if now >= farm_end_at:
@@ -120,8 +120,10 @@ class Tomarket:
                         self.print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Farm Already Started ]{Style.RESET_ALL}")
                         timestamp_farm_end_at = farm_end_at.strftime('%X %Z')
                         self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
+                elif farm_start['status'] == 500 and farm_start['message'] == 'game end need claim':
+                    self.farm_claim(token=token)
                 else:
-                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error 'status' In Farm Start ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{farm_start['message']}' Status '{farm_start['status']}' In Farm Start ]{Style.RESET_ALL}")
             else:
                 self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Farm Start ]{Style.RESET_ALL}")
         else:
@@ -146,17 +148,17 @@ class Tomarket:
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.BLUE + Style.BRIGHT}[ Starting Farm ]{Style.RESET_ALL}"
                     )
-                    return self.farm_start(token=token)
-                elif farm_claim['status'] == 500 or farm_claim['message'] == 'farm not started or claimed':
+                    self.farm_start(token=token)
+                elif farm_claim['status'] == 500 and farm_claim['message'] == 'farm not started or claimed':
                     self.print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Farm Not Started ]{Style.RESET_ALL}")
-                    return self.farm_start(token=token)
+                    self.farm_start(token=token)
                 else:
-                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error 'status' In Farm Claim Data ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{farm_claim['message']}' Status '{farm_claim['status']}' In Farm Claim Data ]{Style.RESET_ALL}")
             elif 'code' in farm_claim:
-                if farm_claim['code'] == 400 or farm_claim['message'] == 'claim throttle':
+                if farm_claim['code'] == 400 and farm_claim['message'] == 'claim throttle':
                     self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Claim Throttle ]{Style.RESET_ALL}")
                 else:
-                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{farm_claim['message']}' In Farm Claim ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{farm_claim['message']}' Status '{farm_claim['status']}' In Farm Claim ]{Style.RESET_ALL}")
             else:
                 self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' Or 'code' In Farm Claim ]{Style.RESET_ALL}")
         else:
@@ -177,11 +179,11 @@ class Tomarket:
             if 'status' in game_play:
                 if game_play['status'] == 0:
                     sleep(33)
-                    return self.game_claim(token=token, points=random.randint(700, 800))
-                elif game_play['status'] == 500 or game_play['message'] == 'no chance':
+                    self.game_claim(token=token, points=random.randint(700, 800))
+                elif game_play['status'] == 500 and game_play['message'] == 'no chance':
                     self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ No Chance To Start Game ]{Style.RESET_ALL}")
                 else:
-                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{game_play['message']}' In Game Play ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{game_play['message']}' Status '{game_play['status']}' In Game Play ]{Style.RESET_ALL}")
             else:
                 self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Game Play ]{Style.RESET_ALL}")
         else:
@@ -203,14 +205,15 @@ class Tomarket:
                 if game_claim['status'] == 0:
                     self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Game Claimed {game_claim['data']['points']} ]{Style.RESET_ALL}")
                 elif game_claim['status'] == 500 and game_claim['message'] == 'game not start':
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Game Not Start. Starting Now ]{Style.RESET_ALL}")
                     self.game_play(token=token)
                 else:
-                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{game_claim['message']}' In Game Claim ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{game_claim['message']}' Status '{game_claim['status']}' In Game Claim ]{Style.RESET_ALL}")
             elif 'code' in game_claim:
                 if game_claim['code'] == 400 and game_claim['message'] == 'claim throttle':
                     self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Claim Throttle ]{Style.RESET_ALL}")
                 else:
-                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{game_claim['message']}' In Game Claim ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{game_claim['message']}' Status '{game_claim['status']}' In Game Claim ]{Style.RESET_ALL}")
             else:
                 self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' Or 'code' In Game Claim ]{Style.RESET_ALL}")
         else:
@@ -273,7 +276,7 @@ class Tomarket:
                 elif tasks_start['status'] == 500 and tasks_start['message'] == 'Task handle is not exist':
                     self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {task_title} Is Not Exist ]{Style.RESET_ALL}")
                 else:
-                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{tasks_start['message']}' In Tasks Start ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{tasks_start['message']}' Status '{tasks_start['status']}' In Tasks Start ]{Style.RESET_ALL}")
             else:
                 self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Tasks Start ]{Style.RESET_ALL}")
         else:
@@ -302,7 +305,7 @@ class Tomarket:
                     else:
                         self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In 'data' Tasks Check ]{Style.RESET_ALL}")
                 else:
-                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{tasks_check['message']}' In Tasks Check ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{tasks_check['message']}' Status '{tasks_check['status']}' In Tasks Check ]{Style.RESET_ALL}")
             else:
                 self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Tasks Check ]{Style.RESET_ALL}")
         else:
@@ -330,7 +333,7 @@ class Tomarket:
                 elif tasks_claim['status'] == 500 and tasks_claim['message'] == 'Task is not within the valid time':
                     self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ {task_title} Is Not Within The Valid Time ]{Style.RESET_ALL}")
                 else:
-                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{tasks_claim['message']}' In Tasks Claim ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{tasks_claim['message']}' Status '{tasks_claim['status']}' In Tasks Claim ]{Style.RESET_ALL}")
             else:
                 self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Tasks Claim ]{Style.RESET_ALL}")
         else:
