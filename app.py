@@ -339,48 +339,81 @@ class Tomarket:
         else:
             self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Data Tasks Claim Is None ]{Style.RESET_ALL}")
 
-    def main(self):
-        while True:
-            accounts = json.load(open('data.json', 'r'))['accounts']
-            for account in accounts:
-                self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {account['name']} ]{Style.RESET_ALL}")
-                # Daily
-                self.daily_claim(token=account['token'])
-                # Info
-                balance = self.user_balance(token=account['token'])
-                self.print_timestamp(
-                    f"{Fore.YELLOW + Style.BRIGHT}[ Balance {balance['data']['available_balance']} ]{Style.RESET_ALL}"
-                    f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                    f"{Fore.BLUE + Style.BRIGHT}[ Play Passes {balance['data']['play_passes']} ]{Style.RESET_ALL}"
-                )
-                # Farm
-                self.farm_start(token=account['token'])
-            self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ ————— Checking Tasks ————— ]{Style.RESET_ALL}")
-            for account in accounts:
-                self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {account['name']} ]{Style.RESET_ALL}")
-                # Tasks
-                self.tasks_list(token=account['token'])
-            self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ ————— Play Passes ————— ]{Style.RESET_ALL}")
-            for account in accounts:
-                # Play Passes
-                balance = self.user_balance(token=account['token'])
-                if balance['data']['play_passes'] != 0:
-                    while balance['data']['play_passes'] > 0:
-                        self.print_timestamp(
-                            f"{Fore.GREEN + Style.BRIGHT}[ Game Started ]{Style.RESET_ALL}"
-                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                            f"{Fore.BLUE + Style.BRIGHT}[ Please Wait 30 Seconds ]{Style.RESET_ALL}"
-                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                            f"{Fore.CYAN + Style.BRIGHT}[ {account['name']} ]{Style.RESET_ALL}"
-                        )
-                        self.game_play(token=account['token'])
-                        balance['data']['play_passes'] -= 1
-                else:
+    def load_accounts(self):
+        self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Select Account Source Type 1 Or 2 Then Enter ]{Style.RESET_ALL}")
+        self.print_timestamp(
+            f"{Fore.GREEN + Style.BRIGHT}[ 1. Using data.json ]{Style.RESET_ALL}"
+            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+            f"{Fore.BLUE + Style.BRIGHT}[ 2. Using tokens.txt ]{Style.RESET_ALL}"
+        )
+        choice_prompt = (
+            f"{Fore.MAGENTA + Style.BRIGHT}[ Choice ]{Style.RESET_ALL}"
+            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+        )
+        sys.stdout.write(f"{Fore.BLUE + Style.BRIGHT}[ {datetime.now(pytz.timezone('Asia/Jakarta')).strftime('%x %X %Z')} ]{Style.RESET_ALL} {choice_prompt}")
+        sys.stdout.flush()
+        choice = input().strip()
+        if choice == '1':
+            return json.load(open('data.json', 'r'))['accounts'], False
+        elif choice == '2':
+            return [line.strip() for line in open('tokens.txt', 'r').readlines()], True
+        else:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Invalid Choice. Please Type 1 Or 2. ]{Style.RESET_ALL}")
+            return self.load_accounts()
+
+    def process_account(self, accounts, from_tokens):
+        self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ ————— Information ————— ]{Style.RESET_ALL}")
+        for index, account in enumerate(accounts):
+            token = account if from_tokens else account['token']
+            name = index + 1 if from_tokens else account['name']
+            self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {name} ]{Style.RESET_ALL}")
+            self.daily_claim(token=token)
+            balance = self.user_balance(token=token)
+            self.print_timestamp(
+                f"{Fore.YELLOW + Style.BRIGHT}[ Balance {balance['data']['available_balance']} ]{Style.RESET_ALL}"
+                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                f"{Fore.BLUE + Style.BRIGHT}[ Play Passes {balance['data']['play_passes']} ]{Style.RESET_ALL}"
+            )
+            self.farm_start(token=token)
+
+    def process_tasks(self, accounts, from_tokens):
+        self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ ————— Tasks ————— ]{Style.RESET_ALL}")
+        for index, account in enumerate(accounts):
+            token = account if from_tokens else account['token']
+            name = index + 1 if from_tokens else account['name']
+            self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {name} ]{Style.RESET_ALL}")
+            self.tasks_list(token=token)
+
+    def process_play_passes(self, accounts, from_tokens):
+        self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ ————— Play Passes ————— ]{Style.RESET_ALL}")
+        for index, account in enumerate(accounts):
+            token = account if from_tokens else account['token']
+            name = index + 1 if from_tokens else account['name']
+            balance = self.user_balance(token=token)
+            if balance['data']['play_passes'] != 0:
+                while balance['data']['play_passes'] > 0:
                     self.print_timestamp(
-                        f"{Fore.RED + Style.BRIGHT}[ Not Enough Play Passes ]{Style.RESET_ALL}"
+                        f"{Fore.GREEN + Style.BRIGHT}[ Game Started ]{Style.RESET_ALL}"
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.CYAN + Style.BRIGHT}[ {account['name']} ]{Style.RESET_ALL}"
+                        f"{Fore.BLUE + Style.BRIGHT}[ Please Wait 30 Seconds ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.CYAN + Style.BRIGHT}[ {name} ]{Style.RESET_ALL}"
                     )
+                    self.game_play(token=token)
+                    balance['data']['play_passes'] -= 1
+            else:
+                self.print_timestamp(
+                    f"{Fore.RED + Style.BRIGHT}[ Not Enough Play Passes ]{Style.RESET_ALL}"
+                    f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                    f"{Fore.CYAN + Style.BRIGHT}[ {name} ]{Style.RESET_ALL}"
+                )
+
+    def main(self):
+        accounts, from_tokens = self.load_accounts()
+        while True:
+            self.process_account(accounts, from_tokens)
+            self.process_tasks(accounts, from_tokens)
+            self.process_play_passes(accounts, from_tokens)
             self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Restarting Soon ]{Style.RESET_ALL}")
             sleep(3 * 3600)
             self.clear_terminal()
