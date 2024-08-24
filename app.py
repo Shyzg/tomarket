@@ -12,7 +12,6 @@ import random
 import re
 import requests
 import sys
-
 import tzlocal
 
 class Tomarket:
