@@ -81,10 +81,38 @@ class Tomarket:
         if total_lines == 0:
             raise ValueError(f"File 'queries.txt' Is Empty. Please Fill It With Queries")
 
-        for i in range(0, total_lines, lines_per_file):
+        account_files = [f for f in os.listdir() if f.startswith('accounts-') and f.endswith('.json')]
+        if account_files:
+            account_files.sort(key=lambda x: int(re.findall(r'\d+', x)[0]))
+            last_file_number = int(re.findall(r'\d+', account_files[-1])[0])
+        else:
+            last_file_number = 0
+
+        if last_file_number > 0:
+            last_accounts_file = f"accounts-{last_file_number}.json"
+            with open(last_accounts_file, 'r') as file:
+                accounts_data = json.load(file)
+                existing_accounts = accounts_data.get('accounts', [])
+        else:
+            existing_accounts = []
+
+        accounts_to_add = min(lines_per_file - len(existing_accounts), total_lines)
+        if existing_accounts and accounts_to_add > 0:
+            chunk = queries[:accounts_to_add]
+            accounts = self.user_login(chunk)
+            existing_accounts.extend(accounts)
+
+            with open(f"accounts-{last_file_number}.json", 'w') as outfile:
+                json.dump({'accounts': existing_accounts}, outfile, indent=4)
+
+            self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Successfully Updated Tokens In 'accounts-{last_file_number}.json' ]{Style.RESET_ALL}")
+
+            queries = queries[accounts_to_add:]
+
+        for i in range(0, len(queries), lines_per_file):
             chunk = queries[i:i + lines_per_file]
-            file_index = (i // lines_per_file) + 1
-            accounts_file = f"accounts-{file_index}.json"
+            last_file_number += 1
+            accounts_file = f"accounts-{last_file_number}.json"
 
             accounts = self.user_login(chunk)
 
