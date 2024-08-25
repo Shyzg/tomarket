@@ -1,6 +1,5 @@
-import time
 from colorama import *
-from datetime import datetime, tzinfo
+from datetime import datetime
 from fake_useragent import FakeUserAgent
 from faker import Faker
 from time import sleep
@@ -15,10 +14,9 @@ import sys
 import tzlocal
 
 class Tomarket:
-    def __init__(self, accounts_file=None) -> None:
+    def __init__(self) -> None:
         self.session = requests.Session()
         self.faker = Faker()
-        self.accounts_file = accounts_file
         self.headers = {
             'Accept': 'application/json, text/plain, */*',
             'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
@@ -162,37 +160,37 @@ class Tomarket:
             response = self.session.post(url=url, headers=self.headers, data=data)
             response.raise_for_status()
             start_farm = response.json()
-            if start_farm['status'] in [0, 200]:
-                self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Farming Started ]{Style.RESET_ALL}")
-                now = datetime.now(pytz.timezone('Asia/Jakarta'))
-                farm_end_at = datetime.fromtimestamp(start_farm['data']['end_at'], pytz.timezone('Asia/Jakarta'))
+            if start_farm['status'] == 0:
+                self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Farm Started ]{Style.RESET_ALL}")
+                now = datetime.now(tzlocal.get_localzone())
+                farm_end_at = datetime.fromtimestamp(start_farm['data']['end_at'], tzlocal.get_localzone())
                 if now >= farm_end_at:
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming Farming ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming Farm ]{Style.RESET_ALL}")
                     self.claim_farm(token=token)
                 else:
                     timestamp_farm_end_at = farm_end_at.strftime('%X %Z')
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farming Can Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
             elif start_farm['status'] == 500 and start_farm['message'] == 'game already started':
-                now = datetime.now(pytz.timezone('Asia/Jakarta'))
-                farm_end_at = datetime.fromtimestamp(start_farm['data']['end_at'], pytz.timezone('Asia/Jakarta'))
+                now = datetime.now(tzlocal.get_localzone())
+                farm_end_at = datetime.fromtimestamp(start_farm['data']['end_at'], tzlocal.get_localzone())
                 if now >= farm_end_at:
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming Farming ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming Farm ]{Style.RESET_ALL}")
                     self.claim_farm(token=token)
                 else:
-                    self.print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Farming Already Started ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Farm Already Started ]{Style.RESET_ALL}")
                     timestamp_farm_end_at = farm_end_at.strftime('%X %Z')
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farming Can Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
             elif start_farm['status'] == 500 and start_farm['message'] == 'game end need claim':
-                self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming Farming ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming Farm ]{Style.RESET_ALL}")
                 self.claim_farm(token=token)
             else:
-                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{start_farm['message']}' Status '{start_farm['status']}' In Farm Start ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{start_farm['message']}' Status '{start_farm['status']}' In Start Farm ]{Style.RESET_ALL}")
         except requests.HTTPError as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Start Farming: {str(e)} ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Start Farm: {str(e)} ]{Style.RESET_ALL}")
         except requests.RequestException as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ A Request Error Occurred While Start Farming: {str(e)} ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ A Request Error Occurred While Start Farm: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Start Farming: {str(e)} ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Start Farm: {str(e)} ]{Style.RESET_ALL}")
 
     def claim_farm(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/farm/claim'
@@ -209,33 +207,33 @@ class Tomarket:
             if 'status' in claim_farm:
                 if claim_farm['status'] == 0:
                     self.print_timestamp(
-                        f"{Fore.GREEN + Style.BRIGHT}[ Farming Claimed {claim_farm['data']['points']} ]{Style.RESET_ALL}"
+                        f"{Fore.GREEN + Style.BRIGHT}[ Farm Claimed {claim_farm['data']['points']} ]{Style.RESET_ALL}"
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.YELLOW + Style.BRIGHT}[ Start Farming ]{Style.RESET_ALL}"
+                        f"{Fore.YELLOW + Style.BRIGHT}[ Starting Farm ]{Style.RESET_ALL}"
                     )
                     self.start_farm(token=token)
                 elif claim_farm['status'] == 500 and claim_farm['message'] == 'farm not started or claimed':
                     self.print_timestamp(
-                        f"{Fore.RED + Style.BRIGHT}[ Farming Not Started ]{Style.RESET_ALL}"
+                        f"{Fore.RED + Style.BRIGHT}[ Farm Not Started ]{Style.RESET_ALL}"
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.YELLOW + Style.BRIGHT}[ Start Farming ]{Style.RESET_ALL}"
+                        f"{Fore.YELLOW + Style.BRIGHT}[ Starting Farm ]{Style.RESET_ALL}"
                     )
                     self.start_farm(token=token)
                 else:
-                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{claim_farm['message']}' Status '{claim_farm['status']}' In Claim Farming Data ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{claim_farm['message']}' Status '{claim_farm['status']}' In Claim Farm Data ]{Style.RESET_ALL}")
             elif 'code' in claim_farm:
                 if claim_farm['code'] == 400 and claim_farm['message'] == 'claim throttle':
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claim Farming Throttle ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claim Farm Throttle ]{Style.RESET_ALL}")
                 else:
-                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{claim_farm['message']}' Code '{claim_farm['status']}' In Farm Claim ]{Style.RESET_ALL}")
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{claim_farm['message']}' Code '{claim_farm['status']}' In Claim Farm ]{Style.RESET_ALL}")
             else:
-                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' Or 'code' In Claim Farming ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' Or 'code' In Claim Farm ]{Style.RESET_ALL}")
         except requests.HTTPError as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Farming: {str(e)} ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Farm: {str(e)} ]{Style.RESET_ALL}")
         except requests.RequestException as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ A Request Error Occurred While Claim Farming: {str(e)} ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ A Request Error Occurred While Claim Farm: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Farming: {str(e)} ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Farm: {str(e)} ]{Style.RESET_ALL}")
 
     def play_game(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/game/play'
@@ -444,7 +442,19 @@ class Tomarket:
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.BLUE + Style.BRIGHT}[ Play Passes {balance['data']['play_passes']} ]{Style.RESET_ALL}"
                     )
-                    self.start_farm(token=account['token'])
+                    if 'farming' in balance['data']:
+                        now = datetime.now(tzlocal.get_localzone())
+                        farm_end_at = datetime.fromtimestamp(balance['data']['farming']['end_at'], tzlocal.get_localzone())
+                        if now >= farm_end_at:
+                            self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming Farm ]{Style.RESET_ALL}")
+                            self.claim_farm(token=account['token'])
+                        else:
+                            self.print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Farm Already Started ]{Style.RESET_ALL}")
+                            timestamp_farm_end_at = farm_end_at.strftime('%X %Z')
+                            self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
+                    else:
+                        self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Starting Farm ]{Style.RESET_ALL}")
+                        self.start_farm(token=account['token'])
                     while balance['data']['play_passes'] > 0:
                         self.play_game(token=account['token'])
                         balance['data']['play_passes'] -= 1
