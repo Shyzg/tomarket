@@ -253,7 +253,7 @@ class Tomarket:
                     f"{Fore.BLUE + Style.BRIGHT}[ Please Wait 30 Seconds ]{Style.RESET_ALL}"
                 )
                 sleep(33)
-                self.claim(token=token, points=random.randint(700, 800))
+                self.claim_game(token=token, points=random.randint(700, 800))
             elif play_game['status'] == 500 and play_game['message'] == 'no chance':
                 self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ No Chance To Start Game ]{Style.RESET_ALL}")
             else:
@@ -454,6 +454,9 @@ class Tomarket:
                     else:
                         self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Starting Farm ]{Style.RESET_ALL}")
                         self.start_farm(token=account['token'])
+                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ ————— Home/Play Passes ————— ]{Style.RESET_ALL}")
+                for account in accounts:
+                    self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}")
                     while balance['data']['play_passes'] > 0:
                         self.play_game(token=account['token'])
                         balance['data']['play_passes'] -= 1
