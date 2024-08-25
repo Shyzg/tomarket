@@ -457,6 +457,7 @@ class Tomarket:
                 self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ ————— Home/Play Passes ————— ]{Style.RESET_ALL}")
                 for account in accounts:
                     self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}")
+                    balance = self.balance_user(token=account['token'])
                     while balance['data']['play_passes'] > 0:
                         self.play_game(token=account['token'])
                         balance['data']['play_passes'] -= 1
