@@ -66,7 +66,7 @@ class Tomarket:
                     'first_name': first_name,
                     'token': access_token
                 })
-            except (requests.RequestException, json.JSONDecodeError) as e:
+            except (requests.RequestException, json.JSONDecodeError, KeyError) as e:
                 self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Failed to process query: {query} | Error: {str(e)} ]{Style.RESET_ALL}")
         return accounts
 
@@ -84,35 +84,37 @@ class Tomarket:
         account_files = [f for f in os.listdir() if f.startswith('accounts-') and f.endswith('.json')]
         if account_files:
             account_files.sort(key=lambda x: int(re.findall(r'\d+', x)[0]))
-            last_file_number = int(re.findall(r'\d+', account_files[-1])[0])
         else:
-            last_file_number = 0
+            account_files = []
 
-        if last_file_number > 0:
-            last_accounts_file = f"accounts-{last_file_number}.json"
-            with open(last_accounts_file, 'r') as file:
+        for account_file in account_files:
+            with open(account_file, 'r') as file:
                 accounts_data = json.load(file)
-                existing_accounts = accounts_data.get('accounts', [])
-        else:
-            existing_accounts = []
+                accounts = accounts_data.get('accounts', [])
 
-        accounts_to_add = min(lines_per_file - len(existing_accounts), total_lines)
-        if existing_accounts and accounts_to_add > 0:
-            chunk = queries[:accounts_to_add]
-            accounts = self.user_login(chunk)
-            existing_accounts.extend(accounts)
+            if len(accounts) < 10:
+                remaining_slots = 10 - len(accounts)
+                chunk = queries[:remaining_slots]
+                new_accounts = self.user_login(chunk)
+                accounts.extend(new_accounts)
+                accounts_data['accounts'] = accounts
 
-            with open(f"accounts-{last_file_number}.json", 'w') as outfile:
-                json.dump({'accounts': existing_accounts}, outfile, indent=4)
+                with open(account_file, 'w') as outfile:
+                    json.dump(accounts_data, outfile, indent=4)
 
-            self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Successfully Updated Tokens In 'accounts-{last_file_number}.json' ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Updated '{account_file}' With {len(new_accounts)} New Token And Name ]{Style.RESET_ALL}")
 
-            queries = queries[accounts_to_add:]
+                queries = queries[remaining_slots:]
+
+                if len(queries) == 0:
+                    break
+
+        last_file_number = int(re.findall(r'\d+', account_files[-1])[0]) if account_files else 0
 
         for i in range(0, len(queries), lines_per_file):
             chunk = queries[i:i + lines_per_file]
-            last_file_number += 1
-            accounts_file = f"accounts-{last_file_number}.json"
+            file_index = last_file_number + 1
+            accounts_file = f"accounts-{file_index}.json"
 
             accounts = self.user_login(chunk)
 
@@ -120,6 +122,7 @@ class Tomarket:
                 json.dump({'accounts': accounts}, outfile, indent=4)
 
             self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Successfully Generated Tokens In '{accounts_file}' ]{Style.RESET_ALL}")
+            last_file_number += 1
 
     def load_accounts_from_file(self, file_path):
         with open(file_path, 'r') as file:
