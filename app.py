@@ -6,7 +6,6 @@ from time import sleep
 import gc
 import json
 import os
-import pytz
 import random
 import re
 import requests
