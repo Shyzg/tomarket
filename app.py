@@ -352,7 +352,7 @@ class Tomarket:
                 if (
                     (end_time and end_time < current_time) or
                     ('walletAddress' in task['handleFunc'] or 'boost' in task['handleFunc'] or 'checkInvite' in task['handleFunc']) or
-                    ('bitget' in task['title'].lower()) or
+                    ('classmate' in task['tag']) or
                     ('classmate' in task['type'].lower())
                 ):
                     continue
