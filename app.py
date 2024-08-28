@@ -3,7 +3,6 @@ from datetime import datetime
 from fake_useragent import FakeUserAgent
 from faker import Faker
 from time import sleep
-import gc
 import json
 import os
 import random
@@ -23,7 +22,6 @@ class Tomarket:
             'Host': 'api-web.tomarket.ai',
             'Origin': 'https://mini-app.tomarket.ai',
             'Pragma': 'no-cache',
-            'Priority': 'u=1, i',
             'Referer': 'https://mini-app.tomarket.ai/',
             'Sec-Fetch-Dest': 'empty',
             'Sec-Fetch-Mode': 'cors',
@@ -67,7 +65,11 @@ class Tomarket:
                     'token': access_token
                 })
             except (requests.RequestException, json.JSONDecodeError, KeyError) as e:
-                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Failed to process query: {query} | Error: {str(e)} ]{Style.RESET_ALL}")
+                self.print_timestamp(
+                    f"{Fore.YELLOW + Style.BRIGHT}[ Failed To Process {query} ]{Style.RESET_ALL}"
+                    f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                    f"{Fore.RED + Style.BRIGHT}[ {str(e)} ]{Style.RESET_ALL}"
+                )
         return accounts
 
     def process_queries(self, lines_per_file=10):
@@ -75,11 +77,10 @@ class Tomarket:
             raise FileNotFoundError(f"File 'queries.txt' Not Found. Please Ensure It Exists")
 
         with open('queries.txt', 'r') as f:
-            queries = [line.strip() for line in f.readlines() if line.strip()]
+            queries = [line.strip() for line in f if line.strip()]
 
-        total_lines = len(queries)
-        if total_lines == 0:
-            raise ValueError(f"File 'queries.txt' Is Empty. Please Fill It With Queries")
+        if not queries:
+            raise ValueError("File 'queries.txt' Is Empty")
 
         account_files = [f for f in os.listdir() if f.startswith('accounts-') and f.endswith('.json')]
         if account_files:
@@ -126,8 +127,7 @@ class Tomarket:
 
     def load_accounts_from_file(self, file_path):
         with open(file_path, 'r') as file:
-            accounts = json.load(file)['accounts']
-        return accounts
+            return json.load(file)['accounts']
 
     def claim_daily(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/daily/claim'
@@ -195,7 +195,6 @@ class Tomarket:
                 now = datetime.now(tzlocal.get_localzone())
                 farm_end_at = datetime.fromtimestamp(start_farm['data']['end_at'], tzlocal.get_localzone())
                 if now >= farm_end_at:
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming Farm ]{Style.RESET_ALL}")
                     self.claim_farm(token=token)
                 else:
                     timestamp_farm_end_at = farm_end_at.strftime('%X %Z')
@@ -204,14 +203,11 @@ class Tomarket:
                 now = datetime.now(tzlocal.get_localzone())
                 farm_end_at = datetime.fromtimestamp(start_farm['data']['end_at'], tzlocal.get_localzone())
                 if now >= farm_end_at:
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming Farm ]{Style.RESET_ALL}")
                     self.claim_farm(token=token)
                 else:
-                    self.print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Farm Already Started ]{Style.RESET_ALL}")
                     timestamp_farm_end_at = farm_end_at.strftime('%X %Z')
                     self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
             elif start_farm['status'] == 500 and start_farm['message'] == 'game end need claim':
-                self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming Farm ]{Style.RESET_ALL}")
                 self.claim_farm(token=token)
             else:
                 self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{start_farm['message']}' Status '{start_farm['status']}' In Start Farm ]{Style.RESET_ALL}")
@@ -273,28 +269,34 @@ class Tomarket:
             'Content-Length': str(len(data)),
             'Content-Type': 'application/json'
         })
-        try:
-            response = self.session.post(url=url, headers=self.headers, data=data)
-            response.raise_for_status()
-            play_game = response.json()
-            if play_game['status'] == 0:
-                self.print_timestamp(
-                    f"{Fore.YELLOW + Style.BRIGHT}[ Game Started ]{Style.RESET_ALL}"
-                    f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                    f"{Fore.BLUE + Style.BRIGHT}[ Please Wait 30 Seconds ]{Style.RESET_ALL}"
-                )
-                sleep(33)
-                self.claim_game(token=token, points=random.randint(700, 800))
-            elif play_game['status'] == 500 and play_game['message'] == 'no chance':
-                self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ No Chance To Start Game ]{Style.RESET_ALL}")
-            else:
-                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{play_game['message']}' Status '{play_game['status']}' In Play Game ]{Style.RESET_ALL}")
-        except requests.HTTPError as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Play Game: {str(e)} ]{Style.RESET_ALL}")
-        except requests.RequestException as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ A Request Error Occurred While Play Game: {str(e)} ]{Style.RESET_ALL}")
-        except Exception as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Play Game: {str(e)} ]{Style.RESET_ALL}")
+        while True:
+            try:
+                response = self.session.post(url=url, headers=self.headers, data=data)
+                response.raise_for_status()
+                play_game = response.json()
+                if play_game['status'] == 0:
+                    self.print_timestamp(
+                        f"{Fore.YELLOW + Style.BRIGHT}[ Game Started ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.BLUE + Style.BRIGHT}[ Please Wait 30 Seconds ]{Style.RESET_ALL}"
+                    )
+                    sleep(30 + random.randint(3, 5))
+                    self.claim_game(token=token, points=random.randint(6000, 6001))
+                elif play_game['status'] == 500 and play_game['message'] == 'no chance':
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ No Chance To Start Game ]{Style.RESET_ALL}")
+                    break
+                else:
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{play_game['message']}' Status '{play_game['status']}' In Play Game ]{Style.RESET_ALL}")
+                    break
+            except requests.HTTPError as e:
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Play Game: {str(e)} ]{Style.RESET_ALL}")
+                break
+            except requests.RequestException as e:
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ A Request Error Occurred While Play Game: {str(e)} ]{Style.RESET_ALL}")
+                break
+            except Exception as e:
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Play Game: {str(e)} ]{Style.RESET_ALL}")
+                break
 
     def claim_game(self, token: str, points: int):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/game/claim'
@@ -342,33 +344,39 @@ class Tomarket:
             'Content-Length': str(len(data)),
             'Content-Type': 'application/json'
         })
-        response = self.session.post(url=url, headers=self.headers, data=data)
-        response.raise_for_status()
-        list_tasks = response.json()
-        current_time = datetime.now()
-        for category in list_tasks['data']:
-            for task in list_tasks['data'][category]:
-                end_time = datetime.strptime(task.get('endTime'), '%Y-%m-%d %H:%M:%S') if task.get('endTime') else None
-                if (
-                    (end_time and end_time < current_time) or
-                    ('walletAddress' in task['handleFunc'] or 'boost' in task['handleFunc'] or 'checkInvite' in task['handleFunc']) or
-                    ('classmate' in task['tag']) or
-                    ('classmate' in task['type'].lower())
-                ):
-                    continue
-                wait_second = task.get('waitSecond', 0)
-                if task['status'] == 0 and task['type'] == "mysterious":
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming {task['title']} ]{Style.RESET_ALL}")
-                    self.claim_tasks(token=token, task_id=task['taskId'], task_title=task['title'])
-                elif task['status'] == 0:
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Starting {task['title']} ]{Style.RESET_ALL}")
-                    self.start_tasks(token=token, task_id=task['taskId'], task_title=task['title'], task_waitsecond=wait_second)
-                elif task['status'] == 1:
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ You Haven't Finish Or Start {task['title']} ]{Style.RESET_ALL}")
-                    self.check_tasks(token=token, task_id=task['taskId'], task_title=task['title'])
-                elif task['status'] == 2:
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming {task['title']} ]{Style.RESET_ALL}")
-                    self.claim_tasks(token=token, task_id=task['taskId'], task_title=task['title'])
+        try:
+            response = self.session.post(url=url, headers=self.headers, data=data)
+            response.raise_for_status()
+            list_tasks = response.json()
+            current_time = datetime.now()
+            for category in list_tasks['data']:
+                for task in list_tasks['data'][category]:
+                    end_time = datetime.strptime(task.get('endTime'), '%Y-%m-%d %H:%M:%S') if task.get('endTime') else None
+                    if (
+                        (end_time and end_time < current_time) or
+                        ('walletAddress' in task['handleFunc'] or 'boost' in task['handleFunc'] or 'checkInvite' in task['handleFunc']) or
+                        ('classmate' in task['tag']) or
+                        ('classmate' in task['type'].lower())
+                    ): continue
+                    wait_second = task.get('waitSecond', 0)
+                    if task['status'] == 0 and task['type'] == "mysterious":
+                        self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming {task['title']} ]{Style.RESET_ALL}")
+                        self.claim_tasks(token=token, task_id=task['taskId'], task_title=task['title'])
+                    elif task['status'] == 0:
+                        self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Starting {task['title']} ]{Style.RESET_ALL}")
+                        self.start_tasks(token=token, task_id=task['taskId'], task_title=task['title'], task_waitsecond=wait_second)
+                    elif task['status'] == 1:
+                        self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Checking {task['title']} ]{Style.RESET_ALL}")
+                        self.check_tasks(token=token, task_id=task['taskId'], task_title=task['title'])
+                    elif task['status'] == 2:
+                        self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming {task['title']} ]{Style.RESET_ALL}")
+                        self.claim_tasks(token=token, task_id=task['taskId'], task_title=task['title'])
+        except requests.HTTPError as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Tasks: {str(e)} ]{Style.RESET_ALL}")
+        except requests.RequestException as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ A Request Error Occurred While Fetching Tasks: {str(e)} ]{Style.RESET_ALL}")
+        except Exception as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Tasks: {str(e)} ]{Style.RESET_ALL}")
 
     def start_tasks(self, token: str, task_id: int, task_title: str, task_waitsecond: int):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/start'
@@ -384,11 +392,9 @@ class Tomarket:
             start_tasks = response.json()
             if start_tasks['status'] == 0:
                 if start_tasks['data']['status'] == 1:
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Checking {task_title} ]{Style.RESET_ALL}")
-                    sleep(task_waitsecond + 3)
+                    sleep(task_waitsecond + random.randint(3, 5))
                     self.check_tasks(token=token, task_id=task_id, task_title=task_title)
                 elif start_tasks['data']['status'] == 2:
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming {task_title} ]{Style.RESET_ALL}")
                     self.claim_tasks(token=token, task_id=task_id, task_title=task_title)
             elif start_tasks['status'] == 500 and start_tasks['message'] == 'Handle user\'s task error':
                 self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Finish {task_title} By Itself ]{Style.RESET_ALL}")
@@ -419,7 +425,6 @@ class Tomarket:
                 if check_tasks['data']['status'] == 1:
                     self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ {task_title} Still Have Not Finished ]{Style.RESET_ALL}")
                 elif check_tasks['data']['status'] == 2:
-                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming {task_title} ]{Style.RESET_ALL}")
                     self.claim_tasks(token=token, task_id=task_id, task_title=task_title)
             else:
                 self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{check_tasks['message']}' Status '{check_tasks['status']}' In Check Tasks ]{Style.RESET_ALL}")
@@ -462,7 +467,7 @@ class Tomarket:
     def main(self, accounts):
         while True:
             try:
-                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ ————— Home ————— ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home ]{Style.RESET_ALL}")
                 for account in accounts:
                     self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}")
                     self.claim_daily(token=account['token'])
@@ -476,30 +481,23 @@ class Tomarket:
                         now = datetime.now(tzlocal.get_localzone())
                         farm_end_at = datetime.fromtimestamp(balance['data']['farming']['end_at'], tzlocal.get_localzone())
                         if now >= farm_end_at:
-                            self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claiming Farm ]{Style.RESET_ALL}")
                             self.claim_farm(token=account['token'])
                         else:
-                            self.print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Farm Already Started ]{Style.RESET_ALL}")
                             timestamp_farm_end_at = farm_end_at.strftime('%X %Z')
                             self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
                     else:
-                        self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Starting Farm ]{Style.RESET_ALL}")
                         self.start_farm(token=account['token'])
-                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ ————— Home/Play Passes ————— ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home/Play Passes ]{Style.RESET_ALL}")
                 for account in accounts:
                     self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}")
-                    balance = self.balance_user(token=account['token'])
-                    while balance['data']['play_passes'] > 0:
-                        self.play_game(token=account['token'])
-                        balance['data']['play_passes'] -= 1
-                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ ————— Tasks ————— ]{Style.RESET_ALL}")
+                    self.play_game(token=account['token'])
+                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Tasks ]{Style.RESET_ALL}")
                 for account in accounts:
                     self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}")
                     self.list_tasks(token=account['token'])
                 self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Restarting Soon ]{Style.RESET_ALL}")
                 sleep(3 * 3600)
                 self.clear_terminal()
-                gc.collect()
             except Exception as e:
                 self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {str(e)} ]{Style.RESET_ALL}")
                 continue
@@ -529,7 +527,6 @@ if __name__ == '__main__':
             f"{Fore.CYAN + Style.BRIGHT}[ Enter The Number Corresponding To Your Choice ]{Style.RESET_ALL}"
             f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
         ))
-
         if initial_choice == 1:
             tomarket.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Processing Queries to Generate Tokens ]{Style.RESET_ALL}")
             tomarket.process_queries()
@@ -539,8 +536,7 @@ if __name__ == '__main__':
             account_files.sort(key=lambda x: int(re.findall(r'\d+', x)[0]))
 
             if not account_files:
-                tomarket.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ No 'accounts-*.json' Files Found After Generating Tokens ]{Style.RESET_ALL}")
-                sys.exit(1)
+                raise FileNotFoundError("No 'accounts-*.json' Files Found In The Directory. Please Generate Tokens First By Selecting Option 1.")
         elif initial_choice == 2:
             if not account_files:
                 raise FileNotFoundError("No 'accounts-*.json' Files Found In The Directory. Please Generate Tokens First By Selecting Option 1.")
@@ -559,7 +555,6 @@ if __name__ == '__main__':
             f"{Fore.CYAN + Style.BRIGHT}[ Enter The Number Corresponding To The File You Want To Use ]{Style.RESET_ALL}"
             f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
         )) - 1
-
         if choice < 0 or choice >= len(account_files):
             raise ValueError("Invalid Choice. Please Run The Script Again And Choose A Valid Option")
 
