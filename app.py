@@ -1,5 +1,6 @@
+import sys
 from colorama import *
-from datetime import datetime
+from datetime import datetime, timedelta
 from fake_useragent import FakeUserAgent
 from faker import Faker
 from time import sleep
@@ -8,7 +9,6 @@ import os
 import random
 import re
 import requests
-import sys
 import tzlocal
 
 class Tomarket:
@@ -468,6 +468,7 @@ class Tomarket:
         while True:
             try:
                 self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home ]{Style.RESET_ALL}")
+                farming_times = []
                 for account in accounts:
                     self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}")
                     self.claim_daily(token=account['token'])
@@ -480,6 +481,7 @@ class Tomarket:
                     if 'farming' in balance['data']:
                         now = datetime.now(tzlocal.get_localzone())
                         farm_end_at = datetime.fromtimestamp(balance['data']['farming']['end_at'], tzlocal.get_localzone())
+                        farming_times.append(farm_end_at.timestamp())
                         if now >= farm_end_at:
                             self.claim_farm(token=account['token'])
                         else:
@@ -495,8 +497,22 @@ class Tomarket:
                 for account in accounts:
                     self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}")
                     self.list_tasks(token=account['token'])
-                self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Restarting Soon ]{Style.RESET_ALL}")
-                sleep(3 * 3600)
+
+                if farming_times:
+                    now = datetime.now(tzlocal.get_localzone()).timestamp()
+                    wait_times = [farm_end_time - now for farm_end_time in farming_times if farm_end_time > now]
+                    if wait_times:
+                        sleep_time = min(wait_times) + 30
+                    else:
+                        sleep_time = 15 * 60
+                else:
+                    sleep_time = 15 * 60
+                
+                sleep_timestamp = datetime.now(tzlocal.get_localzone()) + timedelta(seconds=sleep_time)
+                timestamp_sleep_time = sleep_timestamp.strftime('%X %Z')
+                self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Restarting At {timestamp_sleep_time} ]{Style.RESET_ALL}")
+                
+                sleep(sleep_time)
                 self.clear_terminal()
             except Exception as e:
                 self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {str(e)} ]{Style.RESET_ALL}")
