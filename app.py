@@ -1,4 +1,3 @@
-import sys
 from colorama import *
 from datetime import datetime, timedelta
 from fake_useragent import FakeUserAgent
@@ -9,7 +8,7 @@ import os
 import random
 import re
 import requests
-import tzlocal
+import sys
 
 class Tomarket:
     def __init__(self) -> None:
@@ -34,7 +33,7 @@ class Tomarket:
 
     def print_timestamp(self, message):
         print(
-            f"{Fore.BLUE + Style.BRIGHT}[ {datetime.now(tzlocal.get_localzone()).strftime('%x %X %Z')} ]{Style.RESET_ALL}"
+            f"{Fore.BLUE + Style.BRIGHT}[ {datetime.now().astimezone().strftime('%x %X %Z')} ]{Style.RESET_ALL}"
             f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
             f"{message}",
             flush=True
@@ -192,16 +191,16 @@ class Tomarket:
             start_farm = response.json()
             if start_farm['status'] == 0:
                 self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Farm Started ]{Style.RESET_ALL}")
-                now = datetime.now(tzlocal.get_localzone())
-                farm_end_at = datetime.fromtimestamp(start_farm['data']['end_at'], tzlocal.get_localzone())
+                now = datetime.now().astimezone()
+                farm_end_at = datetime.fromtimestamp(start_farm['data']['end_at']).astimezone()
                 if now >= farm_end_at:
                     self.claim_farm(token=token)
                 else:
                     timestamp_farm_end_at = farm_end_at.strftime('%X %Z')
                     self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
             elif start_farm['status'] == 500 and start_farm['message'] == 'game already started':
-                now = datetime.now(tzlocal.get_localzone())
-                farm_end_at = datetime.fromtimestamp(start_farm['data']['end_at'], tzlocal.get_localzone())
+                now = datetime.now().astimezone()
+                farm_end_at = datetime.fromtimestamp(start_farm['data']['end_at']).astimezone()
                 if now >= farm_end_at:
                     self.claim_farm(token=token)
                 else:
@@ -479,8 +478,8 @@ class Tomarket:
                         f"{Fore.BLUE + Style.BRIGHT}[ Play Passes {balance['data']['play_passes']} ]{Style.RESET_ALL}"
                     )
                     if 'farming' in balance['data']:
-                        now = datetime.now(tzlocal.get_localzone())
-                        farm_end_at = datetime.fromtimestamp(balance['data']['farming']['end_at'], tzlocal.get_localzone())
+                        now = datetime.now().astimezone()
+                        farm_end_at = datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone()
                         farming_times.append(farm_end_at.timestamp())
                         if now >= farm_end_at:
                             self.claim_farm(token=account['token'])
@@ -499,7 +498,7 @@ class Tomarket:
                     self.list_tasks(token=account['token'])
 
                 if farming_times:
-                    now = datetime.now(tzlocal.get_localzone()).timestamp()
+                    now = datetime.now().astimezone().timestamp()
                     wait_times = [farm_end_time - now for farm_end_time in farming_times if farm_end_time > now]
                     if wait_times:
                         sleep_time = min(wait_times) + 30
@@ -507,11 +506,11 @@ class Tomarket:
                         sleep_time = 15 * 60
                 else:
                     sleep_time = 15 * 60
-                
-                sleep_timestamp = datetime.now(tzlocal.get_localzone()) + timedelta(seconds=sleep_time)
+
+                sleep_timestamp = datetime.now().astimezone() + timedelta(seconds=sleep_time)
                 timestamp_sleep_time = sleep_timestamp.strftime('%X %Z')
                 self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Restarting At {timestamp_sleep_time} ]{Style.RESET_ALL}")
-                
+
                 sleep(sleep_time)
                 self.clear_terminal()
             except Exception as e:
