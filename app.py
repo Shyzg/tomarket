@@ -1,3 +1,4 @@
+import sys
 from colorama import *
 from datetime import datetime, timedelta
 from fake_useragent import FakeUserAgent
@@ -8,7 +9,6 @@ import os
 import random
 import re
 import requests
-import sys
 
 class Tomarket:
     def __init__(self) -> None:
