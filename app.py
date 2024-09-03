@@ -1,4 +1,6 @@
+import asyncio
 import sys
+import token
 from colorama import *
 from datetime import datetime, timedelta
 from fake_useragent import FakeUserAgent
@@ -166,6 +168,162 @@ class Tomarket:
             self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ A Request Error Occurred While Daily Claim: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
             self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Daily Claim: {str(e)} ]{Style.RESET_ALL}")
+
+    def data_rank(self, token: str):
+        url = 'https://api-web.tomarket.ai/tomarket-game/v1/rank/data'
+        self.headers.update({
+            'Authorization': token,
+            'Content-Length': '0'
+        })
+        try:
+            response = self.session.post(url=url, headers=self.headers)
+            response.raise_for_status()
+            data_rank = response.json()
+            if 'status' in data_rank:
+                if data_rank['status'] == 0:
+                    if data_rank['data']['isCreated']:
+                        self.print_timestamp(
+                            f"{Fore.MAGENTA + Style.BRIGHT}[ Current Rank {data_rank['data']['currentRank']['name']} ]{Style.RESET_ALL}"
+                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                            f"{Fore.BLUE + Style.BRIGHT}[ Minimun Star {data_rank['data']['currentRank']['minStar']} — Maximum Star {data_rank['data']['currentRank']['minStar']} ]{Style.RESET_ALL}"
+                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                            f"{Fore.YELLOW + Style.BRIGHT}[ Stars {data_rank['data']['currentRank']['stars']} — Unused Stars {data_rank['data']['unusedStars']} ]{Style.RESET_ALL}"
+                        )
+                        if data_rank['data']['unusedStars'] != 0:
+                            self.upgrade_rank(token=token, stars=data_rank['data']['unusedStars'])
+                    else:
+                        self.evaluate_rank(token=token)
+                else:
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{data_rank['message']}' Status '{data_rank['status']}' In Data Rank ]{Style.RESET_ALL}")
+            else:
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Data Rank ]{Style.RESET_ALL}")
+        except requests.HTTPError as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Data Rank: {str(e)} ]{Style.RESET_ALL}")
+        except requests.RequestException as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ A Request Error Occurred While Data Rank: {str(e)} ]{Style.RESET_ALL}")
+        except Exception as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Data Rank: {str(e)} ]{Style.RESET_ALL}")
+
+    def evaluate_rank(self, token: str):
+        url = 'https://api-web.tomarket.ai/tomarket-game/v1/rank/evaluate'
+        self.headers.update({
+            'Authorization': token,
+            'Content-Length': '0'
+        })
+        try:
+            response = self.session.post(url=url, headers=self.headers)
+            response.raise_for_status()
+            evaluate_rank = response.json()
+            if 'status' in evaluate_rank:
+                if evaluate_rank['status'] == 0:
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Evaluating Rank ]{Style.RESET_ALL}")
+                    self.print_timestamp(
+                        f"{Fore.BLUE + Style.BRIGHT}[ Invite Count {evaluate_rank['data']['inviteCount']} ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.RED + Style.BRIGHT}[ Tomato Score {evaluate_rank['data']['tomatoScore']} ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.YELLOW + Style.BRIGHT}[ Stars {evaluate_rank['data']['stars']} ]{Style.RESET_ALL}"
+                    )
+                    self.create_rank(token=token)
+                elif evaluate_rank['status'] == 500 and evaluate_rank['message'] == 'User has a rank':
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ User Has A Rank ]{Style.RESET_ALL}")
+                else:
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{evaluate_rank['message']}' Status '{evaluate_rank['status']}' In Evaluate Rank ]{Style.RESET_ALL}")
+            else:
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Evaluate Rank ]{Style.RESET_ALL}")
+        except requests.HTTPError as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Evaluate Rank: {str(e)} ]{Style.RESET_ALL}")
+        except requests.RequestException as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ A Request Error Occurred While Evaluate Rank: {str(e)} ]{Style.RESET_ALL}")
+        except Exception as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Evaluate Rank: {str(e)} ]{Style.RESET_ALL}")
+
+    def create_rank(self, token: str):
+        url = 'https://api-web.tomarket.ai/tomarket-game/v1/rank/create'
+        self.headers.update({
+            'Authorization': token,
+            'Content-Length': '0'
+        })
+        try:
+            response = self.session.post(url=url, headers=self.headers)
+            response.raise_for_status()
+            create_rank = response.json()
+            if 'status' in create_rank:
+                if create_rank['status'] == 0:
+                    if create_rank['data']['isCreated']:
+                        self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Successfully Create Rank ]{Style.RESET_ALL}")
+                        self.print_timestamp(
+                            f"{Fore.MAGENTA + Style.BRIGHT}[ Current Rank {create_rank['data']['currentRank']['name']} ]{Style.RESET_ALL}"
+                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                            f"{Fore.BLUE + Style.BRIGHT}[ Minimun Star {create_rank['data']['currentRank']['minStar']} — Maximum Star {create_rank['data']['currentRank']['maxStar']} ]{Style.RESET_ALL}"
+                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                            f"{Fore.YELLOW + Style.BRIGHT}[ Stars {create_rank['data']['currentRank']['stars']} — Unused Stars {create_rank['data']['unusedStars']} ]{Style.RESET_ALL}"
+                        )
+                        if create_rank['data']['unusedStars'] != 0:
+                            self.upgrade_rank(token=token, stars=create_rank['data']['unusedStars'])
+                    else:
+                        self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Failed Create Rank ]{Style.RESET_ALL}")
+                elif create_rank['status'] == 427 and create_rank['message'] == 'Rank value has already been initialized':
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Rank Value Has Already Been Initialized ]{Style.RESET_ALL}")
+                elif create_rank['status'] == 500 and create_rank['message'] == 'Need to evaluate stars first':
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Need To Evaluate Stars First ]{Style.RESET_ALL}")
+                else:
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{create_rank['message']}' Status '{create_rank['status']}' In Create Rank ]{Style.RESET_ALL}")
+            else:
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' In Create Rank ]{Style.RESET_ALL}")
+        except requests.HTTPError as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Create Rank: {str(e)} ]{Style.RESET_ALL}")
+        except requests.RequestException as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ A Request Error Occurred While Create Rank: {str(e)} ]{Style.RESET_ALL}")
+        except Exception as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Create Rank: {str(e)} ]{Style.RESET_ALL}")
+
+    def upgrade_rank(self, token: str, stars: int):
+        url = 'https://api-web.tomarket.ai/tomarket-game/v1/rank/upgrade'
+        data = json.dumps({'stars':stars})
+        self.headers.update({
+            'Authorization': token,
+            'Content-Length': str(len(data)),
+            'Content-Type': 'application/json'
+        })
+        try:
+            response = self.session.post(url=url, headers=self.headers, data=data)
+            response.raise_for_status()
+            upgrade_rank = response.json()
+            if 'status' in upgrade_rank:
+                if upgrade_rank['status'] == 0:
+                    if upgrade_rank['data']['isCreated'] and upgrade_rank['data']['isUpgrade']:
+                        self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Successfully Upgrade Rank ]{Style.RESET_ALL}")
+                        self.print_timestamp(
+                            f"{Fore.MAGENTA + Style.BRIGHT}[ Current Rank {upgrade_rank['data']['currentRank']['name']} ]{Style.RESET_ALL}"
+                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                            f"{Fore.BLUE + Style.BRIGHT}[ Minimun Star {upgrade_rank['data']['currentRank']['minStar']} — Maximum Star {upgrade_rank['data']['currentRank']['minStar']} ]{Style.RESET_ALL}"
+                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                            f"{Fore.YELLOW + Style.BRIGHT}[ Stars {upgrade_rank['data']['currentRank']['stars']} — Unused Stars {upgrade_rank['data']['unusedStars']} ]{Style.RESET_ALL}"
+                        )
+                        if upgrade_rank['data']['unusedStars'] != 0:
+                            self.upgrade_rank(token=token, stars=upgrade_rank['data']['unusedStars'])
+                    else:
+                        self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Failed Upgrade Rank ]{Style.RESET_ALL}")
+                elif upgrade_rank['status'] == 500 and (upgrade_rank['message'] == 'You dose not have a rank' or upgrade_rank['message'] == 'You does not have a rank'):
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ You Does Not Have A Rank ]{Style.RESET_ALL}")
+                elif upgrade_rank['status'] == 500 and (upgrade_rank['message'] == f'You dose not have enough stars {stars}' or upgrade_rank['message'] == f'You does not have enough stars {stars}'):
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ You Does Not Have Enough {stars} Stars ]{Style.RESET_ALL}")
+                else:
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{upgrade_rank['message']}' Status '{upgrade_rank['status']}' In Upgrade Rank ]{Style.RESET_ALL}")
+            elif 'code' in upgrade_rank:
+                if upgrade_rank['code'] == 400 and upgrade_rank['message'] == 'claim throttle':
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Upgrade Rank Throttle ]{Style.RESET_ALL}")
+                else:
+                    self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Error '{upgrade_rank['message']}' Code '{upgrade_rank['status']}' In Upgrade Rank ]{Style.RESET_ALL}")
+            else:
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ There Is No 'status' Or 'code' In Upgrade Rank ]{Style.RESET_ALL}")
+        except requests.HTTPError as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Upgrade Rank: {str(e)} ]{Style.RESET_ALL}")
+        except requests.RequestException as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ A Request Error Occurred While Upgrade Rank: {str(e)} ]{Style.RESET_ALL}")
+        except Exception as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Upgrade Rank: {str(e)} ]{Style.RESET_ALL}")
 
     def balance_user(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/user/balance'
@@ -466,14 +624,15 @@ class Tomarket:
     def main(self, accounts):
         while True:
             try:
-                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home ]{Style.RESET_ALL}")
                 farming_times = []
+                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ {'—' * 25} ]{Style.RESET_ALL}")
                 for account in accounts:
                     self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}")
                     self.claim_daily(token=account['token'])
                     balance = self.balance_user(token=account['token'])
                     self.print_timestamp(
-                        f"{Fore.YELLOW + Style.BRIGHT}[ Balance {balance['data']['available_balance']} ]{Style.RESET_ALL}"
+                        f"{Fore.RED + Style.BRIGHT}[ Balance {balance['data']['available_balance']} ]{Style.RESET_ALL}"
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.BLUE + Style.BRIGHT}[ Play Passes {balance['data']['play_passes']} ]{Style.RESET_ALL}"
                     )
@@ -488,14 +647,25 @@ class Tomarket:
                             self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {timestamp_farm_end_at} ]{Style.RESET_ALL}")
                     else:
                         self.start_farm(token=account['token'])
+                    self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ {'—' * 25} ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home/Rank ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ {'—' * 25} ]{Style.RESET_ALL}")
+                for account in accounts:
+                    self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}")
+                    self.data_rank(token=account['token'])
+                    self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ {'—' * 25} ]{Style.RESET_ALL}")
                 self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home/Play Passes ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ {'—' * 25} ]{Style.RESET_ALL}")
                 for account in accounts:
                     self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}")
                     self.play_game(token=account['token'])
+                    self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ {'—' * 25} ]{Style.RESET_ALL}")
                 self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Tasks ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ {'—' * 25} ]{Style.RESET_ALL}")
                 for account in accounts:
                     self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}")
                     self.list_tasks(token=account['token'])
+                    self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ {'—' * 25} ]{Style.RESET_ALL}")
 
                 if farming_times:
                     now = datetime.now().astimezone().timestamp()
