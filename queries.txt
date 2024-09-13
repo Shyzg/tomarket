@@ -1,3 +1,0 @@
-user=aaa
-user=bbb
-user=ccc
