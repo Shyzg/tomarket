@@ -197,8 +197,7 @@ class Tomarket:
                                 f"{Fore.MAGENTA + Style.BRIGHT}[ Rank {data_rank['data']['currentRank']['name']} ]{Style.RESET_ALL}"
                             )
                         return self.upgrade_rank(token=token, stars=data_rank['data']['unusedStars'], first_name=first_name)
-                    else:
-                        return self.evaluate_rank(token=token, first_name=first_name)
+                    return self.evaluate_rank(token=token, first_name=first_name)
         except RequestException as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
@@ -329,7 +328,9 @@ class Tomarket:
             elif 'code' in upgrade_rank:
                 if upgrade_rank['code'] == 400 and upgrade_rank['message'] == 'claim throttle':
                     return self.print_timestamp(
-                        f"{Fore.YELLOW + Style.BRIGHT}[ Upgrade Rank Throttle ]{Style.RESET_ALL}"
+                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.RED + Style.BRIGHT}[ Upgrade Rank Throttle ]{Style.RESET_ALL}"
                     )
         except RequestException as e:
             return self.print_timestamp(
@@ -390,25 +391,26 @@ class Tomarket:
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.GREEN + Style.BRIGHT}[ Farm Started ]{Style.RESET_ALL}"
                     )
+
                     if datetime.now().astimezone() >= datetime.fromtimestamp(start_farm['data']['end_at']).astimezone():
                         return self.claim_farm(token=token, first_name=first_name)
-                    else:
-                        return self.print_timestamp(
-                            f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                            f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {datetime.fromtimestamp(start_farm['data']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}"
-                        )
+
+                    return self.print_timestamp(
+                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {datetime.fromtimestamp(start_farm['data']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}"
+                    )
                 elif start_farm['status'] == 500 and start_farm['message'] == 'game already started':
                     if datetime.now().astimezone() >= datetime.fromtimestamp(start_farm['data']['end_at']).astimezone():
                         return self.claim_farm(token=token, first_name=first_name)
-                    else:
-                        return self.print_timestamp(
-                            f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                            f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {datetime.fromtimestamp(start_farm['data']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}"
-                        )
-            elif start_farm['status'] == 500 and start_farm['message'] == 'game end need claim':
-                return self.claim_farm(token=token, first_name=first_name)
+                    
+                    return self.print_timestamp(
+                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {datetime.fromtimestamp(start_farm['data']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}"
+                    )
+                elif start_farm['status'] == 500 and start_farm['message'] == 'game end need claim':
+                    return self.claim_farm(token=token, first_name=first_name)
         except RequestException as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
@@ -451,7 +453,11 @@ class Tomarket:
                     return self.start_farm(token=token, first_name=first_name)
             elif 'code' in claim_farm:
                 if claim_farm['code'] == 400 and claim_farm['message'] == 'claim throttle':
-                    return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claim Farm Throttle ]{Style.RESET_ALL}")
+                    return self.print_timestamp(
+                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.RED + Style.BRIGHT}[ Claim Farm Throttle ]{Style.RESET_ALL}"
+                    )
         except RequestException as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
@@ -540,7 +546,9 @@ class Tomarket:
             elif 'code' in claim_game:
                 if claim_game['code'] == 400 and claim_game['message'] == 'claim throttle':
                     return self.print_timestamp(
-                        f"{Fore.YELLOW + Style.BRIGHT}[ Claim Game Throttle ]{Style.RESET_ALL}"
+                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.RED + Style.BRIGHT}[ Claim Game Throttle ]{Style.RESET_ALL}"
                     )
         except RequestException as e:
             return self.print_timestamp(
