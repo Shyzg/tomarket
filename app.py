@@ -745,8 +745,8 @@ class Tomarket:
             try:
                 farming_times = []
 
+                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home ]{Style.RESET_ALL}")
                 for account in accounts:
-                    self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home ]{Style.RESET_ALL}")
                     self.claim_daily(token=account['token'], first_name=account['first_name'])
                     balance = self.balance_user(token=account['token'], first_name=account['first_name'])
                     if balance is None: continue
