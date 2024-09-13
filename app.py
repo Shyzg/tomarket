@@ -756,7 +756,11 @@ class Tomarket:
                             self.claim_farm(token=account['token'], first_name=account['first_name'])
                         else:
                             farming_times.append(datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone().timestamp())
-                            self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}")
+                            self.print_timestamp(
+                                f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
+                                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                                f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}"
+                            )
                     else:
                         self.start_farm(token=account['token'], first_name=account['first_name'])
 
