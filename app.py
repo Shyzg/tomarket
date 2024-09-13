@@ -487,7 +487,7 @@ class Tomarket:
                             f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                             f"{Fore.YELLOW + Style.BRIGHT}[ Please Wait 30 Seconds ]{Style.RESET_ALL}"
                         )
-                        sleep(30 + random.randint(3, 5))
+                        sleep(30 + random.randint(5, 10))
                         self.claim_game(token=token, points=random.randint(6000, 6001), first_name=first_name)
                     elif play_game['status'] == 500 and play_game['message'] == 'no chance':
                         self.print_timestamp(
@@ -622,9 +622,10 @@ class Tomarket:
                             f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                             f"{Fore.BLUE + Style.BRIGHT}[ Please Wait ~{task_waitsecond} ]{Style.RESET_ALL}"
                         )
-                        sleep(task_waitsecond + random.randint(3, 5))
+                        sleep(task_waitsecond + random.randint(5, 10))
                         return self.check_tasks(token=token, task_id=task_id, task_title=task_title, first_name=first_name)
                     elif start_tasks['data']['status'] == 2:
+                        sleep(random.randint(5, 10))
                         return self.claim_tasks(token=token, task_id=task_id, task_title=task_title, first_name=first_name)
                 elif start_tasks['status'] == 500 and start_tasks['message'] == 'Handle user\'s task error':
                     return self.print_timestamp(
@@ -666,6 +667,7 @@ class Tomarket:
             if 'status' in check_tasks:
                 if check_tasks['status'] == 0:
                     if check_tasks['data']['status'] == 2:
+                        sleep(random.randint(5, 10))
                         return self.claim_tasks(token=token, task_id=task_id, task_title=task_title, first_name=first_name)
         except RequestException as e:
             return self.print_timestamp(
