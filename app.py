@@ -760,19 +760,19 @@ class Tomarket:
                     else:
                         self.start_farm(token=account['token'], first_name=account['first_name'])
 
-                sleep(10)
+                sleep(random.randint(10, 15))
+                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home/Rank ]{Style.RESET_ALL}")
                 for account in accounts:
-                    self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home/Rank ]{Style.RESET_ALL}")
                     self.data_rank(token=account['token'], first_name=account['first_name'])
 
-                sleep(10)
+                sleep(random.randint(10, 15))
+                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home/Play Passes ]{Style.RESET_ALL}")
                 for account in accounts:
-                    self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home/Play Passes ]{Style.RESET_ALL}")
                     self.play_game(token=account['token'], first_name=account['first_name'])
 
-                sleep(10)
+                sleep(random.randint(10, 15))
+                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Tasks ]{Style.RESET_ALL}")
                 for account in accounts:
-                    self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Tasks ]{Style.RESET_ALL}")
                     self.list_tasks(token=account['token'], first_name=account['first_name'])
 
                 if farming_times:
