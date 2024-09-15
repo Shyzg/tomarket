@@ -796,8 +796,7 @@ class Tomarket:
                 else:
                     sleep_time = 15 * 60
 
-                sleep_timestamp = (datetime.now().astimezone() + timedelta(seconds=sleep_time)).strftime('%X %Z')
-                self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Restarting At {sleep_timestamp} ]{Style.RESET_ALL}")
+                self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Restarting At {(datetime.now().astimezone() + timedelta(seconds=sleep_time)).strftime('%X %Z')} ]{Style.RESET_ALL}")
 
                 sleep(sleep_time)
                 self.clear_terminal()
