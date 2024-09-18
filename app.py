@@ -769,9 +769,7 @@ class Tomarket:
                                     f"{Fore.MAGENTA + Style.BRIGHT}[ You Did Not Have Tomarket Star ]{Style.RESET_ALL}"
                                 )
                             else:
-                                while balance['balance'] > 0:
-                                    self.raffle_spin(token=token, first_name=first_name, category='tomarket')
-                                    balance['balance'] -= 1
+                                self.raffle_spin(token=token, first_name=first_name)
         except RequestException as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
@@ -785,9 +783,9 @@ class Tomarket:
                 f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Assets Spin: {str(e)} ]{Style.RESET_ALL}"
             )
 
-    def raffle_spin(self, token: str, first_name: str, category: str):
+    def raffle_spin(self, token: str, first_name: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/spin/raffle'
-        data = json.dumps({'category':category})
+        data = json.dumps({'category':'tomarket'})
         self.headers.update({
             'Authorization': token,
             'Content-Length': str(len(data)),
@@ -806,6 +804,12 @@ class Tomarket:
                                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                                 f"{Fore.GREEN + Style.BRIGHT}[ You Have Got {result['amount']} {result['type']} From Raffle Spin ]{Style.RESET_ALL}"
                             )
+                elif raffle_spin['status'] == 400 and raffle_spin['message'] == 'Max 3 spins per day using Tomarket Stars.':
+                    return self.print_timestamp(
+                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.RED + Style.BRIGHT}[ Max 3 Spins Per Day Using Tomarket Stars ]{Style.RESET_ALL}"
+                    )
             elif 'code' in raffle_spin:
                 if raffle_spin['code'] == 400 and raffle_spin['message'] == 'claim throttle':
                     return self.print_timestamp(
@@ -830,6 +834,7 @@ class Tomarket:
         while True:
             try:
                 farming_times = []
+                total_balance = 0
 
                 self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home ]{Style.RESET_ALL}")
                 for account in accounts:
@@ -857,6 +862,7 @@ class Tomarket:
                             )
                     else:
                         self.start_farm(token=account['token'], first_name=account['first_name'])
+                    total_balance += int(float(balance['data']['available_balance']))
 
                 sleep(random.randint(10, 15))
                 self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home/Rank ]{Style.RESET_ALL}")
@@ -887,6 +893,11 @@ class Tomarket:
                 else:
                     sleep_time = 15 * 60
 
+                self.print_timestamp(
+                    f"{Fore.CYAN + Style.BRIGHT}[ Total Account {len(accounts)} ]{Style.RESET_ALL}"
+                    f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                    f"{Fore.GREEN + Style.BRIGHT}[ Total Balance {total_balance} ]{Style.RESET_ALL}"
+                )
                 self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Restarting At {(datetime.now().astimezone() + timedelta(seconds=sleep_time)).strftime('%X %Z')} ]{Style.RESET_ALL}")
 
                 sleep(sleep_time)
