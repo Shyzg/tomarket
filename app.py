@@ -196,7 +196,7 @@ class Tomarket:
                                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                                 f"{Fore.MAGENTA + Style.BRIGHT}[ Rank {data_rank['data']['currentRank']['name']} ]{Style.RESET_ALL}"
                             )
-                        return self.upgrade_rank(token=token, stars=data_rank['data']['unusedStars'], first_name=first_name)
+                        return self.upgrade_rank(token=token, stars=(data_rank['data']['unusedStars'] - 5), first_name=first_name)
                     return self.evaluate_rank(token=token, first_name=first_name)
         except RequestException as e:
             return self.print_timestamp(
@@ -271,7 +271,7 @@ class Tomarket:
                                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                                 f"{Fore.MAGENTA + Style.BRIGHT}[ Rank {create_rank['data']['currentRank']['name']} ]{Style.RESET_ALL}"
                             )
-                        return self.upgrade_rank(token=token, stars=create_rank['data']['unusedStars'], first_name=first_name)
+                        return self.upgrade_rank(token=token, stars=(create_rank['data']['unusedStars'] - 5), first_name=first_name)
                 elif create_rank['status'] == 427 and create_rank['message'] == 'Rank value has already been initialized':
                     return self.print_timestamp(
                         f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
@@ -324,6 +324,12 @@ class Tomarket:
                         f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.RED + Style.BRIGHT}[ You Does Not Have Enough {stars} Stars ]{Style.RESET_ALL}"
+                    )
+                elif upgrade_rank['status'] == 500 and upgrade_rank['message'] == f'Star must be greater than zero':
+                    return self.print_timestamp(
+                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.RED + Style.BRIGHT}[ Your Stars Must Be Greater Than Five ]{Style.RESET_ALL}"
                     )
             elif 'code' in upgrade_rank:
                 if upgrade_rank['code'] == 400 and upgrade_rank['message'] == 'claim throttle':
@@ -740,6 +746,86 @@ class Tomarket:
                 f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}"
             )
 
+    def assets_spin(self, token: str, first_name: str):
+        url = 'https://api-web.tomarket.ai/tomarket-game/v1/spin/assets'
+        data = json.dumps({'language_code':'en'})
+        self.headers.update({
+            'Authorization': token,
+            'Content-Length': str(len(data)),
+            'Content-Type': 'application/json'
+        })
+        try:
+            response = self.session.post(url=url, headers=self.headers, data=data)
+            response.raise_for_status()
+            assets_spin = response.json()
+            if 'status' in assets_spin:
+                if assets_spin['status'] == 0:
+                    for balance in assets_spin['data']['balances']:
+                        if balance['balance_type'] == 'Star':
+                            if balance['balance'] == 0:
+                                return self.print_timestamp(
+                                    f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                                    f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                                    f"{Fore.MAGENTA + Style.BRIGHT}[ You Did Not Have Tomarket Star ]{Style.RESET_ALL}"
+                                )
+                            else:
+                                while balance['balance'] > 0:
+                                    self.raffle_spin(token=token, first_name=first_name, category='tomarket')
+                                    balance['balance'] -= 1
+        except RequestException as e:
+            return self.print_timestamp(
+                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Assets Spin: {str(e)} ]{Style.RESET_ALL}"
+            )
+        except (Exception, JSONDecodeError) as e:
+            return self.print_timestamp(
+                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Assets Spin: {str(e)} ]{Style.RESET_ALL}"
+            )
+
+    def raffle_spin(self, token: str, first_name: str, category: str):
+        url = 'https://api-web.tomarket.ai/tomarket-game/v1/spin/raffle'
+        data = json.dumps({'category':category})
+        self.headers.update({
+            'Authorization': token,
+            'Content-Length': str(len(data)),
+            'Content-Type': 'application/json'
+        })
+        try:
+            response = self.session.post(url=url, headers=self.headers, data=data)
+            response.raise_for_status()
+            raffle_spin = response.json()
+            if 'status' in raffle_spin:
+                if raffle_spin['status'] == 0:
+                    if raffle_spin['data']['isPassed']:
+                        for result in raffle_spin['data']['results']:
+                            self.print_timestamp(
+                                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                                f"{Fore.GREEN + Style.BRIGHT}[ You Have Got {result['amount']} {result['type']} From Raffle Spin ]{Style.RESET_ALL}"
+                            )
+            elif 'code' in raffle_spin:
+                if raffle_spin['code'] == 400 and raffle_spin['message'] == 'claim throttle':
+                    return self.print_timestamp(
+                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.RED + Style.BRIGHT}[ Spin Raffle Throttle ]{Style.RESET_ALL}"
+                    )
+        except RequestException as e:
+            return self.print_timestamp(
+                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Raffle Spin: {str(e)} ]{Style.RESET_ALL}"
+            )
+        except (Exception, JSONDecodeError) as e:
+            return self.print_timestamp(
+                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Raffle Spin: {str(e)} ]{Style.RESET_ALL}"
+            )
+
     def main(self, accounts):
         while True:
             try:
@@ -786,6 +872,11 @@ class Tomarket:
                 self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Tasks ]{Style.RESET_ALL}")
                 for account in accounts:
                     self.list_tasks(token=account['token'], first_name=account['first_name'])
+
+                sleep(random.randint(10, 15))
+                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Spin ]{Style.RESET_ALL}")
+                for account in accounts:
+                    self.assets_spin(token=account['token'], first_name=account['first_name'])
 
                 if farming_times:
                     wait_times = [farm_end_time - datetime.now().astimezone().timestamp() for farm_end_time in farming_times if farm_end_time > datetime.now().astimezone().timestamp()]
