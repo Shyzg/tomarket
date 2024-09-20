@@ -163,13 +163,13 @@ class Tomarket:
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.YELLOW + Style.BRIGHT}[ Daily Claim Throttle ]{Style.RESET_ALL}"
                     )
-        except RequestException as e:
+        except (RequestException, JSONDecodeError) as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.RED + Style.BRIGHT}[ A Request Error Occurred While Daily Claim: {str(e)} ]{Style.RESET_ALL}"
             )
-        except (Exception, JSONDecodeError) as e:
+        except Exception as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -198,13 +198,13 @@ class Tomarket:
                             )
                         return self.upgrade_rank(token=token, stars=(data_rank['data']['unusedStars'] - 5), first_name=first_name)
                     return self.evaluate_rank(token=token, first_name=first_name)
-        except RequestException as e:
+        except (RequestException, JSONDecodeError) as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Data Rank: {str(e)} ]{Style.RESET_ALL}"
             )
-        except (Exception, JSONDecodeError) as e:
+        except Exception as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -236,13 +236,13 @@ class Tomarket:
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.RED + Style.BRIGHT}[ User Has A Rank ]{Style.RESET_ALL}"
                     )
-        except RequestException as e:
+        except (JSONDecodeError, RequestException) as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Evaluate Rank: {str(e)} ]{Style.RESET_ALL}"
             )
-        except (Exception, JSONDecodeError) as e:
+        except Exception as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -280,13 +280,13 @@ class Tomarket:
                     )
                 elif create_rank['status'] == 500 and create_rank['message'] == 'Need to evaluate stars first':
                     return self.evaluate_rank(token=token, first_name=first_name)
-        except RequestException as e:
+        except (JSONDecodeError, RequestException) as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Create Rank: {str(e)} ]{Style.RESET_ALL}"
             )
-        except (Exception, JSONDecodeError) as e:
+        except Exception as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -338,13 +338,13 @@ class Tomarket:
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.RED + Style.BRIGHT}[ Upgrade Rank Throttle ]{Style.RESET_ALL}"
                     )
-        except RequestException as e:
+        except (JSONDecodeError, RequestException) as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Upgrade Rank: {str(e)} ]{Style.RESET_ALL}"
             )
-        except (Exception, JSONDecodeError) as e:
+        except Exception as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -362,14 +362,14 @@ class Tomarket:
             response = self.session.post(url=url, headers=headers)
             response.raise_for_status()
             return response.json()
-        except RequestException as e:
+        except (JSONDecodeError, RequestException) as e:
             self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Balance User: {str(e)} ]{Style.RESET_ALL}"
             )
             return None
-        except (Exception, JSONDecodeError) as e:
+        except Exception as e:
             self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -417,13 +417,13 @@ class Tomarket:
                     )
                 elif start_farm['status'] == 500 and start_farm['message'] == 'game end need claim':
                     return self.claim_farm(token=token, first_name=first_name)
-        except RequestException as e:
+        except (JSONDecodeError, RequestException) as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Start Farm: {str(e)} ]{Style.RESET_ALL}"
             )
-        except (Exception, JSONDecodeError) as e:
+        except Exception as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -464,13 +464,13 @@ class Tomarket:
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.RED + Style.BRIGHT}[ Claim Farm Throttle ]{Style.RESET_ALL}"
                     )
-        except RequestException as e:
+        except (JSONDecodeError, RequestException) as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Farm: {str(e)} ]{Style.RESET_ALL}"
             )
-        except (Exception, JSONDecodeError) as e:
+        except Exception as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -508,14 +508,14 @@ class Tomarket:
                             f"{Fore.RED + Style.BRIGHT}[ No Chance To Start Game ]{Style.RESET_ALL}"
                         )
                         break
-            except RequestException as e:
+            except (JSONDecodeError, RequestException) as e:
                 self.print_timestamp(
                     f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                     f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                     f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Play Game: {str(e)} ]{Style.RESET_ALL}"
                 )
                 break
-            except (Exception, JSONDecodeError) as e:
+            except Exception as e:
                 self.print_timestamp(
                     f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                     f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -556,13 +556,13 @@ class Tomarket:
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.RED + Style.BRIGHT}[ Claim Game Throttle ]{Style.RESET_ALL}"
                     )
-        except RequestException as e:
+        except (JSONDecodeError, RequestException) as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Game: {str(e)} ]{Style.RESET_ALL}"
             )
-        except (Exception, JSONDecodeError) as e:
+        except Exception as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -601,13 +601,13 @@ class Tomarket:
                         self.check_tasks(token=token, task_id=task['taskId'], task_title=task['title'], first_name=first_name)
                     elif task['status'] == 2:
                         self.claim_tasks(token=token, task_id=task['taskId'], task_title=task['title'], first_name=first_name)
-        except RequestException as e:
+        except (JSONDecodeError, RequestException) as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Tasks: {str(e)} ]{Style.RESET_ALL}"
             )
-        except (Exception, JSONDecodeError) as e:
+        except Exception as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -653,13 +653,13 @@ class Tomarket:
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.RED + Style.BRIGHT}[ {task_title} Is Not Exist ]{Style.RESET_ALL}"
                     )
-        except RequestException as e:
+        except (JSONDecodeError, RequestException) as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Start Tasks: {str(e)} ]{Style.RESET_ALL}"
             )
-        except (Exception, JSONDecodeError) as e:
+        except Exception as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -683,13 +683,13 @@ class Tomarket:
                     if check_tasks['data']['status'] == 2:
                         sleep(random.randint(5, 10))
                         return self.claim_tasks(token=token, task_id=task_id, task_title=task_title, first_name=first_name)
-        except RequestException as e:
+        except (JSONDecodeError, RequestException) as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Check Tasks: {str(e)} ]{Style.RESET_ALL}"
             )
-        except (Exception, JSONDecodeError) as e:
+        except Exception as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -733,13 +733,13 @@ class Tomarket:
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.RED + Style.BRIGHT}[ {task_title} Is Not Within The Valid Time ]{Style.RESET_ALL}"
                     )
-        except RequestException as e:
+        except (JSONDecodeError, RequestException) as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}"
             )
-        except (Exception, JSONDecodeError) as e:
+        except Exception as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -770,13 +770,13 @@ class Tomarket:
                                 )
                             else:
                                 self.raffle_spin(token=token, first_name=first_name)
-        except RequestException as e:
+        except (JSONDecodeError, RequestException) as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Assets Spin: {str(e)} ]{Style.RESET_ALL}"
             )
-        except (Exception, JSONDecodeError) as e:
+        except Exception as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -817,13 +817,13 @@ class Tomarket:
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.RED + Style.BRIGHT}[ Spin Raffle Throttle ]{Style.RESET_ALL}"
                     )
-        except RequestException as e:
+        except (JSONDecodeError, RequestException) as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                 f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Raffle Spin: {str(e)} ]{Style.RESET_ALL}"
             )
-        except (Exception, JSONDecodeError) as e:
+        except Exception as e:
             return self.print_timestamp(
                 f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
