@@ -8,11 +8,7 @@ from requests import (
     Session
 )
 from time import sleep
-import json
-import os
-import random
-import re
-import sys
+import json, os, random, re, sys
 
 class Tomarket:
     def __init__(self) -> None:
