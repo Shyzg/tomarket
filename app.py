@@ -126,7 +126,7 @@ class Tomarket:
                 continue
         return accounts
 
-    def claim_daily(self, token: str, first_name: str):
+    def claim_daily(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/daily/claim'
         data = json.dumps({'game_id':'fa873d13-d831-4d6f-8aee-9cff7a1d0db1'})
         headers = {
@@ -142,8 +142,6 @@ class Tomarket:
             if 'status' in claim_daily:
                 if claim_daily['status'] == 0:
                     return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.GREEN + Style.BRIGHT}[ Daily Claimed ]{Style.RESET_ALL}"
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.BLUE + Style.BRIGHT}[ Points {claim_daily['data']['today_points']} ]{Style.RESET_ALL}"
@@ -151,32 +149,16 @@ class Tomarket:
                         f"{Fore.YELLOW + Style.BRIGHT}[ Day {claim_daily['data']['today_game']} ]{Style.RESET_ALL}"
                     )
                 elif claim_daily['status'] == 400 and claim_daily['message'] == 'already_check':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.MAGENTA + Style.BRIGHT}[ Already Check Daily Claim ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Already Check Daily Claim ]{Style.RESET_ALL}")
             elif 'code' in claim_daily:
                 if claim_daily['code'] == 400 and claim_daily['message'] == 'claim throttle':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.YELLOW + Style.BRIGHT}[ Daily Claim Throttle ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Daily Claim Throttle ]{Style.RESET_ALL}")
         except (RequestException, JSONDecodeError) as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ A Request Error Occurred While Daily Claim: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ A Request Error Occurred While Daily Claim: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Daily Claim: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Daily Claim: {str(e)} ]{Style.RESET_ALL}")
 
-    def data_rank(self, token: str, first_name: str):
+    def data_rank(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/rank/data'
         headers = {
             **self.headers,
@@ -191,27 +173,15 @@ class Tomarket:
                 if data_rank['status'] == 0:
                     if data_rank['data']['isCreated']:
                         if data_rank['data']['unusedStars'] == 0:
-                            return self.print_timestamp(
-                                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                                f"{Fore.MAGENTA + Style.BRIGHT}[ Rank {data_rank['data']['currentRank']['name']} ]{Style.RESET_ALL}"
-                            )
-                        return self.upgrade_rank(token=token, stars=(data_rank['data']['unusedStars'] - 5), first_name=first_name)
-                    return self.evaluate_rank(token=token, first_name=first_name)
+                            return self.print_timestamp(f"{Fore.BLUE + Style.BRIGHT}[ Rank {data_rank['data']['currentRank']['name']} ]{Style.RESET_ALL}")
+                        return self.upgrade_rank(token=token, stars=(data_rank['data']['unusedStars'] - 3))
+                    return self.evaluate_rank(token=token)
         except (RequestException, JSONDecodeError) as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Data Rank: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Data Rank: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Data Rank: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Data Rank: {str(e)} ]{Style.RESET_ALL}")
 
-    def evaluate_rank(self, token: str, first_name: str):
+    def evaluate_rank(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/rank/evaluate'
         headers = {
             **self.headers,
@@ -224,32 +194,16 @@ class Tomarket:
             evaluate_rank = response.json()
             if 'status' in evaluate_rank:
                 if evaluate_rank['status'] == 0:
-                    self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.GREEN + Style.BRIGHT}[ Rank Evaluated ]{Style.RESET_ALL}"
-                    )
-                    return self.create_rank(token=token, first_name=first_name)
+                    self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Rank Evaluated ]{Style.RESET_ALL}")
+                    return self.create_rank(token=token)
                 elif evaluate_rank['status'] == 500 and evaluate_rank['message'] == 'User has a rank':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ User Has A Rank ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ User Has A Rank ]{Style.RESET_ALL}")
         except (JSONDecodeError, RequestException) as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Evaluate Rank: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Evaluate Rank: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Evaluate Rank: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Evaluate Rank: {str(e)} ]{Style.RESET_ALL}")
 
-    def create_rank(self, token: str, first_name: str):
+    def create_rank(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/rank/create'
         headers = {
             **self.headers,
@@ -265,35 +219,21 @@ class Tomarket:
                     if create_rank['data']['isCreated']:
                         if create_rank['data']['unusedStars'] == 0:
                             return self.print_timestamp(
-                                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                                 f"{Fore.GREEN + Style.BRIGHT}[ Rank Created ]{Style.RESET_ALL}"
                                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                                f"{Fore.MAGENTA + Style.BRIGHT}[ Rank {create_rank['data']['currentRank']['name']} ]{Style.RESET_ALL}"
+                                f"{Fore.BLUE + Style.BRIGHT}[ Rank {create_rank['data']['currentRank']['name']} ]{Style.RESET_ALL}"
                             )
-                        return self.upgrade_rank(token=token, stars=(create_rank['data']['unusedStars'] - 5), first_name=first_name)
+                        return self.upgrade_rank(token=token, stars=(create_rank['data']['unusedStars'] - 3))
                 elif create_rank['status'] == 427 and create_rank['message'] == 'Rank value has already been initialized':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ Rank Value Has Already Been Initialized ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Rank Value Has Already Been Initialized ]{Style.RESET_ALL}")
                 elif create_rank['status'] == 500 and create_rank['message'] == 'Need to evaluate stars first':
-                    return self.evaluate_rank(token=token, first_name=first_name)
+                    return self.evaluate_rank(token=token)
         except (JSONDecodeError, RequestException) as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Create Rank: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Create Rank: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Create Rank: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Create Rank: {str(e)} ]{Style.RESET_ALL}")
 
-    def upgrade_rank(self, token: str, stars: int, first_name: str):
+    def upgrade_rank(self, token: str, stars: int):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/rank/upgrade'
         data = json.dumps({'stars':stars})
         headers = {
@@ -308,50 +248,22 @@ class Tomarket:
             upgrade_rank = response.json()
             if 'status' in upgrade_rank:
                 if upgrade_rank['status'] == 0:
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.GREEN + Style.BRIGHT}[ Successfully Upgrade Rank With {stars} Stars ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Successfully Upgrade Rank With {stars} Stars ]{Style.RESET_ALL}")
                 elif upgrade_rank['status'] == 500 and upgrade_rank['message'] == 'You dose not have a rank':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ You Does Not Have A Rank ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ You Does Not Have A Rank ]{Style.RESET_ALL}")
                 elif upgrade_rank['status'] == 500 and upgrade_rank['message'] == f'You dose not have enough stars {stars}':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ You Does Not Have Enough {stars} Stars ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ You Does Not Have Enough {stars} Stars ]{Style.RESET_ALL}")
                 elif upgrade_rank['status'] == 500 and upgrade_rank['message'] == f'Star must be greater than zero':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ Your Stars Must Be Greater Than Five ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Your Stars Must Be Greater Than Three ]{Style.RESET_ALL}")
             elif 'code' in upgrade_rank:
                 if upgrade_rank['code'] == 400 and upgrade_rank['message'] == 'claim throttle':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ Upgrade Rank Throttle ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Upgrade Rank Throttle ]{Style.RESET_ALL}")
         except (JSONDecodeError, RequestException) as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Upgrade Rank: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Upgrade Rank: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Upgrade Rank: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Upgrade Rank: {str(e)} ]{Style.RESET_ALL}")
 
-    def balance_user(self, token: str, first_name: str):
+    def balance_user(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/user/balance'
         headers = {
             **self.headers,
@@ -363,21 +275,13 @@ class Tomarket:
             response.raise_for_status()
             return response.json()
         except (JSONDecodeError, RequestException) as e:
-            self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Balance User: {str(e)} ]{Style.RESET_ALL}"
-            )
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Balance User: {str(e)} ]{Style.RESET_ALL}")
             return None
         except Exception as e:
-            self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Balance User: {str(e)} ]{Style.RESET_ALL}"
-            )
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Balance User: {str(e)} ]{Style.RESET_ALL}")
             return None
 
-    def start_farm(self, token: str, first_name: str):
+    def start_farm(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/farm/start'
         data = json.dumps({'game_id':'53b22103-c7ff-413d-bc63-20f6fb806a07'})
         headers = {
@@ -392,45 +296,17 @@ class Tomarket:
             start_farm = response.json()
             if 'status' in start_farm:
                 if start_farm['status'] == 0:
-                    self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.GREEN + Style.BRIGHT}[ Farm Started ]{Style.RESET_ALL}"
-                    )
-
-                    if datetime.now().astimezone() >= datetime.fromtimestamp(start_farm['data']['end_at']).astimezone():
-                        return self.claim_farm(token=token, first_name=first_name)
-
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {datetime.fromtimestamp(start_farm['data']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Farm Started, And Can Be Claim At {datetime.fromtimestamp(start_farm['data']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}")
                 elif start_farm['status'] == 500 and start_farm['message'] == 'game already started':
-                    if datetime.now().astimezone() >= datetime.fromtimestamp(start_farm['data']['end_at']).astimezone():
-                        return self.claim_farm(token=token, first_name=first_name)
-                    
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {datetime.fromtimestamp(start_farm['data']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {datetime.fromtimestamp(start_farm['data']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}")
                 elif start_farm['status'] == 500 and start_farm['message'] == 'game end need claim':
-                    return self.claim_farm(token=token, first_name=first_name)
+                    return self.claim_farm(token=token)
         except (JSONDecodeError, RequestException) as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Start Farm: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Start Farm: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Start Farm: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Start Farm: {str(e)} ]{Style.RESET_ALL}")
 
-    def claim_farm(self, token: str, first_name: str):
+    def claim_farm(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/farm/claim'
         data = json.dumps({'game_id':'53b22103-c7ff-413d-bc63-20f6fb806a07'})
         headers = {
@@ -444,40 +320,20 @@ class Tomarket:
             claim_farm = response.json()
             if 'status' in claim_farm:
                 if claim_farm['status'] == 0:
-                    self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.GREEN + Style.BRIGHT}[ Farm Claimed {claim_farm['data']['points']} ]{Style.RESET_ALL}"
-                    )
-                    return self.start_farm(token=token, first_name=first_name)
+                    self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {claim_farm['data']['points']} From Farm ]{Style.RESET_ALL}")
+                    return self.start_farm(token=token)
                 elif claim_farm['status'] == 500 and claim_farm['message'] == 'farm not started or claimed':
-                    self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ Farm Not Started ]{Style.RESET_ALL}"
-                    )
-                    return self.start_farm(token=token, first_name=first_name)
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Not Started ]{Style.RESET_ALL}")
+                    return self.start_farm(token=token)
             elif 'code' in claim_farm:
                 if claim_farm['code'] == 400 and claim_farm['message'] == 'claim throttle':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ Claim Farm Throttle ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Claim Farm Throttle ]{Style.RESET_ALL}")
         except (JSONDecodeError, RequestException) as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Farm: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Farm: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Farm: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Farm: {str(e)} ]{Style.RESET_ALL}")
 
-    def play_game(self, token: str, first_name: str):
+    def play_game(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/game/play'
         data = json.dumps({'game_id':'59bcd12e-04e2-404c-a172-311a0084587d'})
         headers = {
@@ -493,37 +349,20 @@ class Tomarket:
                 if 'status' in play_game:
                     if play_game['status'] == 0:
                         self.print_timestamp(
-                            f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                             f"{Fore.BLUE + Style.BRIGHT}[ Game Started ]{Style.RESET_ALL}"
                             f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                            f"{Fore.YELLOW + Style.BRIGHT}[ Please Wait 30 Seconds ]{Style.RESET_ALL}"
+                            f"{Fore.YELLOW + Style.BRIGHT}[ Please Wait ~30 Seconds ]{Style.RESET_ALL}"
                         )
-                        sleep(30 + random.randint(5, 10))
-                        self.claim_game(token=token, points=random.randint(6000, 6001), first_name=first_name)
+                        sleep(30 + random.randint(3, 5))
+                        self.claim_game(token=token, points=random.randint(6000, 6001))
                     elif play_game['status'] == 500 and play_game['message'] == 'no chance':
-                        self.print_timestamp(
-                            f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                            f"{Fore.RED + Style.BRIGHT}[ No Chance To Start Game ]{Style.RESET_ALL}"
-                        )
-                        break
+                        return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ No Chance To Start Game ]{Style.RESET_ALL}")
             except (JSONDecodeError, RequestException) as e:
-                self.print_timestamp(
-                    f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                    f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                    f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Play Game: {str(e)} ]{Style.RESET_ALL}"
-                )
-                break
+                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Play Game: {str(e)} ]{Style.RESET_ALL}")
             except Exception as e:
-                self.print_timestamp(
-                    f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                    f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                    f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Play Game: {str(e)} ]{Style.RESET_ALL}"
-                )
-                break
+                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Play Game: {str(e)} ]{Style.RESET_ALL}")
 
-    def claim_game(self, token: str, points: int, first_name: str):
+    def claim_game(self, token: str, points: int):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/game/claim'
         data = json.dumps({'game_id':'59bcd12e-04e2-404c-a172-311a0084587d','points':points})
         self.headers.update({
@@ -537,39 +376,19 @@ class Tomarket:
             claim_game = response.json()
             if 'status' in claim_game:
                 if claim_game['status'] == 0:
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.GREEN + Style.BRIGHT}[ Game Claimed {claim_game['data']['points']} ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {claim_game['data']['points']} From Game ]{Style.RESET_ALL}")
                 elif claim_game['status'] == 500 and claim_game['message'] == 'game not start':
-                    self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ Game Not Start ]{Style.RESET_ALL}"
-                    )
-                    return self.play_game(token=token, first_name=first_name)
+                    self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Game Not Start ]{Style.RESET_ALL}")
+                    return self.play_game(token=token)
             elif 'code' in claim_game:
                 if claim_game['code'] == 400 and claim_game['message'] == 'claim throttle':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ Claim Game Throttle ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Claim Game Throttle ]{Style.RESET_ALL}")
         except (JSONDecodeError, RequestException) as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Game: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Game: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Game: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Game: {str(e)} ]{Style.RESET_ALL}")
 
-    def list_tasks(self, token: str, first_name: str):
+    def list_tasks(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/list'
         data = json.dumps({'language_code':'en'})
         headers = {
@@ -583,38 +402,40 @@ class Tomarket:
             response.raise_for_status()
             list_tasks = response.json()
             current_time = datetime.now()
-            for category in list_tasks['data']:
-                for task in list_tasks['data'][category]:
-                    end_time = datetime.strptime(task.get('endTime'), '%Y-%m-%d %H:%M:%S') if task.get('endTime') else None
-                    if (
-                        (end_time and end_time < current_time) or
-                        ('walletAddress' in task['handleFunc'] or 'boost' in task['handleFunc'] or 'checkInvite' in task['handleFunc']) or
-                        ('classmate' in task['tag']) or
-                        ('classmate' in task['type'].lower())
-                    ): continue
-                    wait_second = task.get('waitSecond', 0)
-                    if task['status'] == 0 and task['type'] == "mysterious":
-                        self.claim_tasks(token=token, task_id=task['taskId'], task_title=task['title'], first_name=first_name)
-                    elif task['status'] == 0:
-                        self.start_tasks(token=token, task_id=task['taskId'], task_title=task['title'], task_waitsecond=wait_second, first_name=first_name)
-                    elif task['status'] == 1:
-                        self.check_tasks(token=token, task_id=task['taskId'], task_title=task['title'], first_name=first_name)
-                    elif task['status'] == 2:
-                        self.claim_tasks(token=token, task_id=task['taskId'], task_title=task['title'], first_name=first_name)
+            self.process_category(list_tasks['data'], token, current_time)
         except (JSONDecodeError, RequestException) as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Tasks: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Tasks: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Tasks: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Tasks: {str(e)} ]{Style.RESET_ALL}")
 
-    def start_tasks(self, token: str, task_id: int, task_title: str, task_waitsecond: int, first_name: str):
+    def process_task(self, task, token, current_time):
+        end_time = datetime.strptime(task.get('endTime'), '%Y-%m-%d %H:%M:%S') if task.get('endTime') else None
+        if (
+            (end_time and end_time < current_time) or
+            ('walletAddress' in task['handleFunc'] or 'boost' in task['handleFunc'] or 'checkInvite' in task['handleFunc']) or
+            ('classmate' in task['tag']) or
+            ('classmate' in task['type'].lower())
+        ): return
+
+        wait_second = task.get('waitSecond', 0)
+        if task['status'] == 0 and task['type'] == "mysterious":
+            self.claim_tasks(token, task['taskId'], task['title'], task['score'])
+        elif task['status'] == 0:
+            self.start_tasks(token, task['taskId'], task['title'], wait_second, task['score'])
+        elif task['status'] == 1:
+            self.check_tasks(token, task['taskId'], task['title'], task['score'])
+        elif task['status'] == 2:
+            self.claim_tasks(token, task['taskId'], task['title'], task['score'])
+
+    def process_category(self, category_data, token, current_time):
+        for category in category_data:
+            if isinstance(category_data[category], list):
+                for task in category_data[category]:
+                    self.process_task(task, token, current_time)
+            elif isinstance(category_data[category], dict):
+                self.process_category(category_data[category], token, current_time)
+
+    def start_tasks(self, token: str, task_id: int, task_title: str, task_waitsecond: int, task_score: int):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/start'
         data = json.dumps({'task_id':task_id})
         self.headers.update({
@@ -630,43 +451,25 @@ class Tomarket:
                 if start_tasks['status'] == 0:
                     if start_tasks['data']['status'] == 1:
                         self.print_timestamp(
-                            f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                            f"{Fore.BLUE + Style.BRIGHT}[ {task_title} Started ]{Style.RESET_ALL}"
                             f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                            f"{Fore.GREEN + Style.BRIGHT}[ {task_title} Started ]{Style.RESET_ALL}"
-                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                            f"{Fore.BLUE + Style.BRIGHT}[ Please Wait ~{task_waitsecond} ]{Style.RESET_ALL}"
+                            f"{Fore.YELLOW + Style.BRIGHT}[ Please Wait ~{task_waitsecond} ]{Style.RESET_ALL}"
                         )
-                        sleep(task_waitsecond + random.randint(5, 10))
-                        return self.check_tasks(token=token, task_id=task_id, task_title=task_title, first_name=first_name)
+                        sleep(task_waitsecond + random.randint(3, 5))
+                        return self.check_tasks(token=token, task_id=task_id, task_title=task_title, task_score=task_score)
                     elif start_tasks['data']['status'] == 2:
-                        sleep(random.randint(5, 10))
-                        return self.claim_tasks(token=token, task_id=task_id, task_title=task_title, first_name=first_name)
+                        sleep(random.randint(3, 5))
+                        return self.claim_tasks(token=token, task_id=task_id, task_title=task_title, task_score=task_score)
                 elif start_tasks['status'] == 500 and start_tasks['message'] == 'Handle user\'s task error':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ Finish {task_title} By Itself ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Finish {task_title} By Itself ]{Style.RESET_ALL}")
                 elif start_tasks['status'] == 500 and start_tasks['message'] == 'Task handle is not exist':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ {task_title} Is Not Exist ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {task_title} Is Not Exist ]{Style.RESET_ALL}")
         except (JSONDecodeError, RequestException) as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Start Tasks: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Start Tasks: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Start Tasks: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Start Tasks: {str(e)} ]{Style.RESET_ALL}")
 
-    def check_tasks(self, token: str, task_id: int, task_title: str, first_name: str):
+    def check_tasks(self, token: str, task_id: int, task_title: str, task_score: int):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/check'
         data = json.dumps({'task_id':task_id})
         self.headers.update({
@@ -681,22 +484,14 @@ class Tomarket:
             if 'status' in check_tasks:
                 if check_tasks['status'] == 0:
                     if check_tasks['data']['status'] == 2:
-                        sleep(random.randint(5, 10))
-                        return self.claim_tasks(token=token, task_id=task_id, task_title=task_title, first_name=first_name)
+                        sleep(random.randint(3, 5))
+                        return self.claim_tasks(token=token, task_id=task_id, task_title=task_title, task_score=task_score)
         except (JSONDecodeError, RequestException) as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Check Tasks: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Check Tasks: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Check Tasks: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Check Tasks: {str(e)} ]{Style.RESET_ALL}")
 
-    def claim_tasks(self, token: str, task_id: int, task_title: str, first_name: str):
+    def claim_tasks(self, token: str, task_id: int, task_title: str, task_score: int):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/claim'
         data = json.dumps({'task_id':task_id})
         self.headers.update({
@@ -710,43 +505,19 @@ class Tomarket:
             claim_tasks = response.json()
             if 'status' in claim_tasks:
                 if claim_tasks['status'] == 0:
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.GREEN + Style.BRIGHT}[ {task_title} Claimed ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {task_score} From {task_title} ]{Style.RESET_ALL}")
                 elif claim_tasks['status'] == 500 and claim_tasks['message'] == 'You haven\'t start this task':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ You Have Not Start {task_title} ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ You Haven\'t Start {task_title} ]{Style.RESET_ALL}")
                 elif claim_tasks['status'] == 500 and claim_tasks['message'] == 'You haven\'t finished this task':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ You Have Not Finished {task_title} ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ You Haven\'t Finished {task_title} ]{Style.RESET_ALL}")
                 elif claim_tasks['status'] == 500 and claim_tasks['message'] == 'Task is not within the valid time':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ {task_title} Is Not Within The Valid Time ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {task_title} Isn\'t Within The Valid Time ]{Style.RESET_ALL}")
         except (JSONDecodeError, RequestException) as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
 
-    def assets_spin(self, token: str, first_name: str):
+    def assets_spin(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/spin/assets'
         data = json.dumps({'language_code':'en'})
         self.headers.update({
@@ -763,29 +534,39 @@ class Tomarket:
                     for balance in assets_spin['data']['balances']:
                         if balance['balance_type'] == 'Star':
                             if balance['balance'] == 0:
-                                return self.print_timestamp(
-                                    f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                                    f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                                    f"{Fore.MAGENTA + Style.BRIGHT}[ You Did Not Have Tomarket Star ]{Style.RESET_ALL}"
-                                )
-                            else:
-                                self.raffle_spin(token=token, first_name=first_name)
+                                return self.print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ You Didn\'t Have Tomarket Star ]{Style.RESET_ALL}")
+                            return self.raffle_spin(token=token, category='tomarket')
         except (JSONDecodeError, RequestException) as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Assets Spin: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Assets Spin: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Assets Spin: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Assets Spin: {str(e)} ]{Style.RESET_ALL}")
 
-    def raffle_spin(self, token: str, first_name: str):
+    def tickets_user(self, token: str):
+        url = 'https://api-web.tomarket.ai/tomarket-game/v1/user/tickets'
+        data = json.dumps({'language_code':'en'})
+        self.headers.update({
+            'Authorization': token,
+            'Content-Length': str(len(data)),
+            'Content-Type': 'application/json'
+        })
+        try:
+            response = self.session.post(url=url, headers=self.headers, data=data)
+            response.raise_for_status()
+            tickets_user = response.json()
+            if 'status' in tickets_user:
+                if tickets_user['status'] == 0:
+                    while tickets_user['data']['ticket_spin_1'] > 0:
+                        self.raffle_spin(token=token, category='ticket_spin_1')
+                        sleep(random.randint(3, 5))
+                        tickets_user['data']['ticket_spin_1'] -= 1
+        except (JSONDecodeError, RequestException) as e:
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Tickets User: {str(e)} ]{Style.RESET_ALL}")
+        except Exception as e:
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Tickets User: {str(e)} ]{Style.RESET_ALL}")
+
+    def raffle_spin(self, token: str, category: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/spin/raffle'
-        data = json.dumps({'category':'tomarket'})
+        data = json.dumps({'category':category})
         self.headers.update({
             'Authorization': token,
             'Content-Length': str(len(data)),
@@ -797,38 +578,19 @@ class Tomarket:
             raffle_spin = response.json()
             if 'status' in raffle_spin:
                 if raffle_spin['status'] == 0:
-                    if raffle_spin['data']['isPassed']:
-                        for result in raffle_spin['data']['results']:
-                            self.print_timestamp(
-                                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                                f"{Fore.GREEN + Style.BRIGHT}[ You Have Got {result['amount']} {result['type']} From Raffle Spin ]{Style.RESET_ALL}"
-                            )
+                    for result in raffle_spin['data']['results']:
+                        self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {result['amount']} {result['type']} From Raffle Spin ]{Style.RESET_ALL}")
                 elif raffle_spin['status'] == 400 and raffle_spin['message'] == 'Max 3 spins per day using Tomarket Stars.':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ Max 3 Spins Per Day Using Tomarket Stars ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Max 3 Spins Per Day Using Tomarket Stars ]{Style.RESET_ALL}")
+                elif raffle_spin['status'] == 500 and raffle_spin['message'] == 'Not enough ticket_spin_1 ticket':
+                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Not Enough Free Spin Tickets ]{Style.RESET_ALL}")
             elif 'code' in raffle_spin:
                 if raffle_spin['code'] == 400 and raffle_spin['message'] == 'claim throttle':
-                    return self.print_timestamp(
-                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.RED + Style.BRIGHT}[ Spin Raffle Throttle ]{Style.RESET_ALL}"
-                    )
+                    return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Spin Raffle Throttle ]{Style.RESET_ALL}")
         except (JSONDecodeError, RequestException) as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Raffle Spin: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Raffle Spin: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(
-                f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
-                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Raffle Spin: {str(e)} ]{Style.RESET_ALL}"
-            )
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Raffle Spin: {str(e)} ]{Style.RESET_ALL}")
 
     def main(self, accounts):
         while True:
@@ -836,53 +598,79 @@ class Tomarket:
                 farming_times = []
                 total_balance = 0
 
-                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home ]{Style.RESET_ALL}")
                 for account in accounts:
-                    self.claim_daily(token=account['token'], first_name=account['first_name'])
-                    balance = self.balance_user(token=account['token'], first_name=account['first_name'])
-                    if balance is None: continue
-
                     self.print_timestamp(
+                        f"{Fore.WHITE + Style.BRIGHT}[ Home ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.GREEN + Style.BRIGHT}[ Balance {balance['data']['available_balance']} ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.BLUE + Style.BRIGHT}[ Play Passes {balance['data']['play_passes']} ]{Style.RESET_ALL}"
                     )
-
-                    if 'farming' in balance['data']:
-                        if datetime.now().astimezone() >= datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone():
-                            self.claim_farm(token=account['token'], first_name=account['first_name'])
+                    self.claim_daily(token=account['token'])
+                    sleep(random.randint(3, 5))
+                    balance = self.balance_user(token=account['token'])
+                    sleep(random.randint(3, 5))
+                    if balance is not None:
+                        self.print_timestamp(
+                            f"{Fore.GREEN + Style.BRIGHT}[ Balance {balance['data']['available_balance']} ]{Style.RESET_ALL}"
+                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                            f"{Fore.BLUE + Style.BRIGHT}[ Play Passes {balance['data']['play_passes']} ]{Style.RESET_ALL}"
+                        )
+                        if 'farming' in balance['data']:
+                            if datetime.now().astimezone() >= datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone():
+                                self.claim_farm(token=account['token'])
+                                sleep(random.randint(3, 5))
+                            else:
+                                farming_times.append(datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone().timestamp())
+                                self.print_timestamp(
+                                    f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
+                                    f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                                    f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}"
+                                )
                         else:
-                            farming_times.append(datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone().timestamp())
-                            self.print_timestamp(
-                                f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
-                                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                                f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}"
-                            )
-                    else:
-                        self.start_farm(token=account['token'], first_name=account['first_name'])
-                    total_balance += int(float(balance['data']['available_balance']))
+                            self.start_farm(token=account['token'])
+                            sleep(random.randint(3, 5))
+                        total_balance += int(float(balance['data']['available_balance']))
 
-                sleep(random.randint(10, 15))
-                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home/Rank ]{Style.RESET_ALL}")
+                sleep(random.randint(5, 7))
                 for account in accounts:
-                    self.data_rank(token=account['token'], first_name=account['first_name'])
+                    self.print_timestamp(
+                        f"{Fore.WHITE + Style.BRIGHT}[ Home/Rank ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
+                    )
+                    self.data_rank(token=account['token'])
+                    sleep(random.randint(3, 5))
 
-                sleep(random.randint(10, 15))
-                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Home/Play Passes ]{Style.RESET_ALL}")
+                sleep(random.randint(5, 7))
                 for account in accounts:
-                    self.play_game(token=account['token'], first_name=account['first_name'])
+                    self.print_timestamp(
+                        f"{Fore.WHITE + Style.BRIGHT}[ Home/Play Passes ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
+                    )
+                    self.play_game(token=account['token'])
+                    sleep(random.randint(3, 5))
 
-                sleep(random.randint(10, 15))
-                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Tasks ]{Style.RESET_ALL}")
+                sleep(random.randint(5, 7))
                 for account in accounts:
-                    self.list_tasks(token=account['token'], first_name=account['first_name'])
+                    self.print_timestamp(
+                        f"{Fore.WHITE + Style.BRIGHT}[ Tasks ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
+                    )
+                    self.list_tasks(token=account['token'])
+                    sleep(random.randint(3, 5))
 
-                sleep(random.randint(10, 15))
-                self.print_timestamp(f"{Fore.WHITE + Style.BRIGHT}[ Spin ]{Style.RESET_ALL}")
+                sleep(random.randint(5, 7))
                 for account in accounts:
-                    self.assets_spin(token=account['token'], first_name=account['first_name'])
+                    self.print_timestamp(
+                        f"{Fore.WHITE + Style.BRIGHT}[ Spin ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
+                    )
+                    self.assets_spin(token=account['token'])
+                    sleep(random.randint(3, 5))
+                    self.tickets_user(token=account['token'])
+                    sleep(random.randint(3, 5))
 
                 if farming_times:
                     wait_times = [farm_end_time - datetime.now().astimezone().timestamp() for farm_end_time in farming_times if farm_end_time > datetime.now().astimezone().timestamp()]
