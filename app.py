@@ -416,12 +416,16 @@ class Tomarket:
         wait_second = task.get('waitSecond', 0)
         if task['status'] == 0 and task['type'] == "mysterious":
             self.claim_tasks(token, task['taskId'], task['title'], task['score'])
+            sleep(random.randint(3, 5))
         elif task['status'] == 0:
             self.start_tasks(token, task['taskId'], task['title'], wait_second, task['score'])
+            sleep(random.randint(3, 5))
         elif task['status'] == 1:
             self.check_tasks(token, task['taskId'], task['title'], task['score'])
+            sleep(random.randint(3, 5))
         elif task['status'] == 2:
             self.claim_tasks(token, task['taskId'], task['title'], task['score'])
+            sleep(random.randint(3, 5))
 
     def process_category(self, category_data, token, current_time):
         for category in category_data:
