@@ -104,7 +104,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers, data=data) as response:
+                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
                     generate_token = await response.json()
                     access_token = generate_token['data']['access_token']
@@ -134,7 +134,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers, data=data) as response:
+                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
                     claim_daily = await response.json()
                     if 'status' in claim_daily:
@@ -162,7 +162,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers) as response:
+                async with session.post(url=url, headers=headers, ssl=False) as response:
                     response.raise_for_status()
                     data_rank = await response.json()
                     if 'status' in data_rank:
@@ -186,7 +186,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers) as response:
+                async with session.post(url=url, headers=headers, ssl=False) as response:
                     response.raise_for_status()
                     evaluate_rank = await response.json()
                     if 'status' in evaluate_rank:
@@ -209,7 +209,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers) as response:
+                async with session.post(url=url, headers=headers, ssl=False) as response:
                     create_rank = await response.json()
                     if 'status' in create_rank:
                         if create_rank['status'] == 0:
@@ -241,7 +241,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers, data=data) as response:
+                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     upgrade_rank = await response.json()
                     if 'status' in upgrade_rank:
                         if upgrade_rank['status'] == 0:
@@ -266,7 +266,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers) as response:
+                async with session.post(url=url, headers=headers, ssl=False) as response:
                     response.raise_for_status()
                     balance_user = await response.json()
                     return balance_user
@@ -288,7 +288,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers, data=data) as response:
+                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
                     start_farm = await response.json()
                     if 'status' in start_farm:
@@ -314,7 +314,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers, data=data) as response:
+                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
                     claim_farm = await response.json()
                     if 'status' in claim_farm:
@@ -341,7 +341,7 @@ class Tomarket:
         while True:
             try:
                 async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                    async with session.post(url=url, headers=headers, data=data) as response:
+                    async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                         response.raise_for_status()
                         play_game = await response.json()
                         if 'status' in play_game:
@@ -371,7 +371,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers, data=data) as response:
+                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
                     claim_game = await response.json()
                     if 'status' in claim_game:
@@ -397,7 +397,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers, data=data) as response:
+                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
                     list_tasks = await response.json()
                     current_time = datetime.now().astimezone()
@@ -408,9 +408,10 @@ class Tomarket:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Tasks: {str(e)} ]{Style.RESET_ALL}")
 
     async def process_task(self, task, token, current_time):
+        start_time = datetime.strptime(task['startTime'], '%Y-%m-%d %H:%M:%S').astimezone() if task.get('startTime') else None
         end_time = datetime.strptime(task['endTime'], '%Y-%m-%d %H:%M:%S').astimezone() if task.get('endTime') else None
         if (
-            (end_time and end_time > current_time) or
+            (end_time and end_time < current_time) or
             ('walletAddress' in task['handleFunc'] or 'boost' in task['handleFunc'] or 'checkInvite' in task['handleFunc']) or
             ('classmate' in task['tag']) or
             ('classmate' in task['type'].lower())
@@ -449,7 +450,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers, data=data) as response:
+                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
                     start_tasks = await response.json()
                     if 'status' in start_tasks:
@@ -485,7 +486,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers, data=data) as response:
+                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
                     check_tasks = await response.json()
                     if 'status' in check_tasks:
@@ -509,7 +510,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers, data=data) as response:
+                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
                     claim_tasks = await response.json()
                     if 'status' in claim_tasks:
@@ -536,7 +537,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers, data=data) as response:
+                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
                     assets_spin = await response.json()
                     if 'status' in assets_spin:
@@ -561,7 +562,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers, data=data) as response:
+                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
                     tickets_user = await response.json()
                     if 'status' in tickets_user:
@@ -585,7 +586,7 @@ class Tomarket:
         }
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers, data=data) as response:
+                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
                     raffle_spin = await response.json()
                     if 'status' in raffle_spin:
