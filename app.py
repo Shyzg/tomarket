@@ -411,7 +411,7 @@ class Tomarket:
         start_time = datetime.strptime(task['startTime'], '%Y-%m-%d %H:%M:%S').astimezone() if task.get('startTime') else None
         end_time = datetime.strptime(task['endTime'], '%Y-%m-%d %H:%M:%S').astimezone() if task.get('endTime') else None
         if (
-            (end_time and end_time < current_time) or
+            (start_time and start_time != current_time and end_time and end_time > current_time) or
             ('walletAddress' in task['handleFunc'] or 'boost' in task['handleFunc'] or 'checkInvite' in task['handleFunc']) or
             ('classmate' in task['tag']) or
             ('classmate' in task['type'].lower())
