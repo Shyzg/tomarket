@@ -701,6 +701,9 @@ class Tomarket:
 
 if __name__ == '__main__':
     try:
+        if sys.platform:
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
         init(autoreset=True)
 
         tomarket = Tomarket()
