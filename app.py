@@ -408,10 +408,9 @@ class Tomarket:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Tasks: {str(e)} ]{Style.RESET_ALL}")
 
     async def process_task(self, task, token, current_time):
-        start_time = datetime.strptime(task['startTime'], '%Y-%m-%d %H:%M:%S').astimezone() if task.get('startTime') else None
         end_time = datetime.strptime(task['endTime'], '%Y-%m-%d %H:%M:%S').astimezone() if task.get('endTime') else None
         if (
-            (start_time and start_time != current_time and end_time and end_time > current_time) or
+            (end_time and end_time < current_time) or
             ('walletAddress' in task['handleFunc'] or 'boost' in task['handleFunc'] or 'checkInvite' in task['handleFunc']) or
             ('classmate' in task['tag']) or
             ('classmate' in task['type'].lower())
