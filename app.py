@@ -1,12 +1,12 @@
-from colorama import *
-from datetime import datetime, timedelta
-from fake_useragent import FakeUserAgent
-from faker import Faker
 from aiohttp import (
     ClientResponseError,
     ClientSession,
     ClientTimeout
 )
+from colorama import *
+from datetime import datetime, timedelta
+from fake_useragent import FakeUserAgent
+from faker import Faker
 from time import sleep
 import asyncio, json, os, random, re, sys
 
@@ -38,61 +38,75 @@ class Tomarket:
             flush=True
         )
 
-    async def process_queries(self, lines_per_file=10):
+    async def process_queries(self, lines_per_file: int):
         if not os.path.exists('queries.txt'):
-            raise FileNotFoundError(f"File 'queries.txt' Not Found. Please Ensure It Exists")
+            raise FileNotFoundError("File 'queries.txt' Not Found. Please Ensure It Exists")
 
-        with open('queries.txt', 'r') as f:
-            queries = [line.strip() for line in f if line.strip()]
-
+        queries = [line.strip() for line in open('queries.txt', 'r') if line.strip()]
         if not queries:
             raise ValueError("File 'queries.txt' Is Empty")
 
         account_files = [f for f in os.listdir() if f.startswith('accounts-') and f.endswith('.json')]
-        if account_files:
-            account_files.sort(key=lambda x: int(re.findall(r'\d+', x)[0]))
-        else:
-            account_files = []
+        account_files.sort(key=lambda x: int(re.findall(r'\d+', x)[0])) if account_files else []
+
+        existing_accounts = {}
+        for account_file in account_files:
+            accounts_data = json.load(open(account_file, 'r'))
+            accounts = accounts_data.get('accounts', [])
+            for account in accounts:
+                existing_accounts[account['first_name']] = account['token']
 
         for account_file in account_files:
-            with open(account_file, 'r') as file:
-                accounts_data = json.load(file)
-                accounts = accounts_data.get('accounts', [])
+            accounts_data = json.load(open(account_file, 'r'))
+            accounts = accounts_data.get('accounts', [])
 
-            if len(accounts) < 10:
-                remaining_slots = 10 - len(accounts)
-                chunk = queries[:remaining_slots]
-                new_accounts = await self.generate_tokens(chunk)
-                accounts.extend(new_accounts)
-                accounts_data['accounts'] = accounts
+            new_accounts = []
+            token_data_list = await self.generate_tokens(queries)
+            for token_data in token_data_list:
+                first_name = token_data['first_name']
+                if first_name in existing_accounts:
+                    for acc in accounts:
+                        if acc['first_name'] == first_name:
+                            acc['token'] = token_data['token']
+                else:
+                    new_accounts.append(token_data)
+                    existing_accounts[first_name] = token_data['token']
 
-                with open(account_file, 'w') as outfile:
-                    json.dump(accounts_data, outfile, indent=4)
+            accounts.extend(new_accounts)
+            accounts = accounts[:lines_per_file]
+            accounts_data['accounts'] = accounts
 
+            if new_accounts:
+                json.dump(accounts_data, open(account_file, 'w'), indent=4)
                 self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Updated '{account_file}' With {len(new_accounts)} New Token And Name ]{Style.RESET_ALL}")
 
-                queries = queries[remaining_slots:]
-
-                if len(queries) == 0:
-                    break
+            queries = queries[len(new_accounts):]
+            if len(queries) == 0:
+                break
 
         last_file_number = int(re.findall(r'\d+', account_files[-1])[0]) if account_files else 0
 
         for i in range(0, len(queries), lines_per_file):
             chunk = queries[i:i + lines_per_file]
-            file_index = last_file_number + 1
-            accounts_file = f"accounts-{file_index}.json"
-            accounts = await self.generate_tokens(chunk)
+            new_accounts = await self.generate_tokens(chunk)
+            new_accounts = [acc for acc in new_accounts if acc['first_name'] not in existing_accounts]
 
-            with open(accounts_file, 'w') as outfile:
-                json.dump({'accounts': accounts}, outfile, indent=4)
+            if new_accounts:
+                last_file_number += 1
+                accounts_file = f"accounts-{last_file_number}.json"
 
-            self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Successfully Generated Tokens In '{accounts_file}' ]{Style.RESET_ALL}")
-            last_file_number += 1
+                for account in new_accounts:
+                    existing_accounts[account['first_name']] = account['token']
 
-    def load_accounts_from_file(self, file_path):
-        with open(file_path, 'r') as file:
-            return json.load(file)['accounts']
+                json.dump({'accounts': new_accounts}, open(accounts_file, 'w'), indent=4)
+                self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Successfully Generated Tokens In '{accounts_file}' ]{Style.RESET_ALL}")
+
+    async def load_from_json(self, file_path):
+        try:
+            return [(account['token'], account['first_name']) for account in json.load(open(file_path, 'r'))['accounts']]
+        except Exception as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Error Occurred While Loading JSON: {str(e)} ]{Style.RESET_ALL}")
+            return []
 
     async def generate_token(self, query: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/user/login'
@@ -102,6 +116,7 @@ class Tomarket:
             'Content-Length': str(len(data)),
             'Content-Type': 'application/json'
         }
+        await asyncio.sleep(3)
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
@@ -109,8 +124,8 @@ class Tomarket:
                     generate_token = await response.json()
                     access_token = generate_token['data']['access_token']
                     first_name = generate_token['data']['fn'] or self.faker.first_name()
-                    return ({'token': access_token, 'first_name': first_name})
-        except (ClientResponseError, Exception) as e:
+                    return {'token': access_token, 'first_name': first_name}
+        except (Exception, ClientResponseError) as e:
             self.print_timestamp(
                 f"{Fore.YELLOW + Style.BRIGHT}[ Failed To Process {query} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -123,7 +138,7 @@ class Tomarket:
         results = await asyncio.gather(*tasks)
         return [result for result in results if result is not None]
 
-    async def claim_daily(self, token: str):
+    async def daily_claim(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/daily/claim'
         data = json.dumps({'game_id':'fa873d13-d831-4d6f-8aee-9cff7a1d0db1'})
         headers = {
@@ -136,24 +151,23 @@ class Tomarket:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
-                    claim_daily = await response.json()
-                    if 'status' in claim_daily:
-                        if claim_daily['status'] == 0:
-                            return self.print_timestamp(
-                                f"{Fore.GREEN + Style.BRIGHT}[ Daily Claimed ]{Style.RESET_ALL}"
-                                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                                f"{Fore.BLUE + Style.BRIGHT}[ Points {claim_daily['data']['today_points']} ]{Style.RESET_ALL}"
-                                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                                f"{Fore.YELLOW + Style.BRIGHT}[ Day {claim_daily['data']['today_game']} ]{Style.RESET_ALL}"
-                            )
-                        elif claim_daily['status'] == 400 and claim_daily['message'] == 'already_check':
-                            return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Already Check Daily Claim ]{Style.RESET_ALL}")
+                    daily_claim = await response.json()
+                    if daily_claim['status'] == 0:
+                        return self.print_timestamp(
+                            f"{Fore.GREEN + Style.BRIGHT}[ Daily Claimed ]{Style.RESET_ALL}"
+                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                            f"{Fore.BLUE + Style.BRIGHT}[ {daily_claim['data']['today_points']} $TOMA ]{Style.RESET_ALL}"
+                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                            f"{Fore.YELLOW + Style.BRIGHT}[ Day {daily_claim['data']['today_game']} ]{Style.RESET_ALL}"
+                        )
+                    elif daily_claim['status'] == 400 and daily_claim['message'] == 'already_check':
+                        return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Already Check Daily Claim ]{Style.RESET_ALL}")
         except ClientResponseError as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Daily Claim: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Daily Claim: {str(e)} ]{Style.RESET_ALL}")
 
-    async def data_rank(self, token: str):
+    async def rank_data(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/rank/data'
         headers = {
             **self.headers,
@@ -164,20 +178,17 @@ class Tomarket:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, ssl=False) as response:
                     response.raise_for_status()
-                    data_rank = await response.json()
-                    if 'status' in data_rank:
-                        if data_rank['status'] == 0:
-                            if data_rank['data']['isCreated']:
-                                if data_rank['data']['unusedStars'] == 0:
-                                    return self.print_timestamp(f"{Fore.BLUE + Style.BRIGHT}[ Rank {data_rank['data']['currentRank']['name']} ]{Style.RESET_ALL}")
-                                return await self.upgrade_rank(token=token, stars=(data_rank['data']['unusedStars'] - 3))
-                            return await self.evaluate_rank(token=token)
+                    rank_data = await response.json()
+                    if rank_data['status'] == 0:
+                        if rank_data['data']['isCreated']:
+                            return await self.rank_upgrade(token=token, stars=rank_data['data']['unusedStars'])
+                        return await self.rank_evaluate(token=token)
         except ClientResponseError as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Data Rank: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Rank Data: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Data Rank: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Rank Data: {str(e)} ]{Style.RESET_ALL}")
 
-    async def evaluate_rank(self, token: str):
+    async def rank_evaluate(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/rank/evaluate'
         headers = {
             **self.headers,
@@ -188,19 +199,18 @@ class Tomarket:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, ssl=False) as response:
                     response.raise_for_status()
-                    evaluate_rank = await response.json()
-                    if 'status' in evaluate_rank:
-                        if evaluate_rank['status'] == 0:
-                            self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Rank Evaluated ]{Style.RESET_ALL}")
-                            return await self.create_rank(token=token)
-                        elif evaluate_rank['status'] == 500 and evaluate_rank['message'] == 'User has a rank':
-                            return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ User Has A Rank ]{Style.RESET_ALL}")
+                    rank_evaluate = await response.json()
+                    if rank_evaluate['status'] == 0:
+                        self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Rank Evaluated ]{Style.RESET_ALL}")
+                        return await self.rank_create(token=token)
+                    elif rank_evaluate['status'] == 500 and rank_evaluate['message'] == 'User has a rank':
+                        return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ User Has A Rank ]{Style.RESET_ALL}")
         except ClientResponseError as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Evaluate Rank: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Rank Evaluate: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Evaluate Rank: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Rank Evaluate: {str(e)} ]{Style.RESET_ALL}")
 
-    async def create_rank(self, token: str):
+    async def rank_create(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/rank/create'
         headers = {
             **self.headers,
@@ -210,27 +220,25 @@ class Tomarket:
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, ssl=False) as response:
-                    create_rank = await response.json()
-                    if 'status' in create_rank:
-                        if create_rank['status'] == 0:
-                            if create_rank['data']['isCreated']:
-                                if create_rank['data']['unusedStars'] == 0:
-                                    return self.print_timestamp(
-                                        f"{Fore.GREEN + Style.BRIGHT}[ Rank Created ]{Style.RESET_ALL}"
-                                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                                        f"{Fore.BLUE + Style.BRIGHT}[ Rank {create_rank['data']['currentRank']['name']} ]{Style.RESET_ALL}"
-                                    )
-                                return await self.upgrade_rank(token=token, stars=(create_rank['data']['unusedStars'] - 3))
-                        elif create_rank['status'] == 427 and create_rank['message'] == 'Rank value has already been initialized':
-                            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Rank Value Has Already Been Initialized ]{Style.RESET_ALL}")
-                        elif create_rank['status'] == 500 and create_rank['message'] == 'Need to evaluate stars first':
-                            return await self.evaluate_rank(token=token)
+                    rank_create = await response.json()
+                    if rank_create['status'] == 0:
+                        if rank_create['data']['isCreated']:
+                            self.print_timestamp(
+                                f"{Fore.GREEN + Style.BRIGHT}[ Rank Created ]{Style.RESET_ALL}"
+                                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                                f"{Fore.BLUE + Style.BRIGHT}[ Rank {rank_create['data']['currentRank']['name']} ]{Style.RESET_ALL}"
+                            )
+                            return await self.rank_upgrade(token=token, stars=rank_create['data']['unusedStars'])
+                    elif rank_create['status'] == 427 and rank_create['message'] == 'Rank value has already been initialized':
+                        return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Rank Value Has Already Been Initialized ]{Style.RESET_ALL}")
+                    elif rank_create['status'] == 500 and rank_create['message'] == 'Need to evaluate stars first':
+                        return await self.rank_evaluate(token=token)
         except ClientResponseError as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Create Rank: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Rank Create: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Create Rank: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Rank Create: {str(e)} ]{Style.RESET_ALL}")
 
-    async def upgrade_rank(self, token: str, stars: int):
+    async def rank_upgrade(self, token: str, stars: int):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/rank/upgrade'
         data = json.dumps({'stars':stars})
         headers = {
@@ -242,22 +250,21 @@ class Tomarket:
         try:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
-                    upgrade_rank = await response.json()
-                    if 'status' in upgrade_rank:
-                        if upgrade_rank['status'] == 0:
-                            return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Successfully Upgrade Rank With {stars} Stars ]{Style.RESET_ALL}")
-                        elif upgrade_rank['status'] == 500 and upgrade_rank['message'] == 'You dose not have a rank':
-                            return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ You Does Not Have A Rank ]{Style.RESET_ALL}")
-                        elif upgrade_rank['status'] == 500 and upgrade_rank['message'] == f'You dose not have enough stars {stars}':
-                            return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ You Does Not Have Enough {stars} Stars ]{Style.RESET_ALL}")
-                        elif upgrade_rank['status'] == 500 and upgrade_rank['message'] == f'Star must be greater than zero':
-                            return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Your Stars Must Be Greater Than Three ]{Style.RESET_ALL}")
+                    rank_upgrade = await response.json()
+                    if rank_upgrade['status'] == 0:
+                        return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Successfully Upgrade Rank With {stars} Stars ]{Style.RESET_ALL}")
+                    elif rank_upgrade['status'] == 500 and rank_upgrade['message'] == 'You dose not have a rank':
+                        return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ You Doesn\'t Have A Rank ]{Style.RESET_ALL}")
+                    elif rank_upgrade['status'] == 500 and rank_upgrade['message'] == f'You dose not have enough stars {stars}':
+                        return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ You Doesn\'t Have Enough {stars} Stars ]{Style.RESET_ALL}")
+                    elif rank_upgrade['status'] == 500 and rank_upgrade['message'] == f'Star must be greater than zero':
+                        return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Stars Must Be Greater Than Zero ]{Style.RESET_ALL}")
         except ClientResponseError as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Upgrade Rank: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Rank Upgrade: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Upgrade Rank: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Rank Upgrade: {str(e)} ]{Style.RESET_ALL}")
 
-    async def balance_user(self, token: str):
+    async def user_balance(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/user/balance'
         headers = {
             **self.headers,
@@ -268,16 +275,15 @@ class Tomarket:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, ssl=False) as response:
                     response.raise_for_status()
-                    balance_user = await response.json()
-                    return balance_user
+                    return await response.json()
         except ClientResponseError as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Balance User: {str(e)} ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching User Balance: {str(e)} ]{Style.RESET_ALL}")
             return None
         except Exception as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Balance User: {str(e)} ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching User Balance: {str(e)} ]{Style.RESET_ALL}")
             return None
 
-    async def start_farm(self, token: str):
+    async def farm_start(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/farm/start'
         data = json.dumps({'game_id':'53b22103-c7ff-413d-bc63-20f6fb806a07'})
         headers = {
@@ -290,20 +296,19 @@ class Tomarket:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
-                    start_farm = await response.json()
-                    if 'status' in start_farm:
-                        if start_farm['status'] == 0:
-                            return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Farm Started, And Can Be Claim At {datetime.fromtimestamp(start_farm['data']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}")
-                        elif start_farm['status'] == 500 and start_farm['message'] == 'game already started':
-                            return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {datetime.fromtimestamp(start_farm['data']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}")
-                        elif start_farm['status'] == 500 and start_farm['message'] == 'game end need claim':
-                            return await self.claim_farm(token=token)
+                    farm_start = await response.json()
+                    if farm_start['status'] == 0:
+                        return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Farm Started, And Can Be Claim At {datetime.fromtimestamp(farm_start['data']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}")
+                    elif farm_start['status'] == 500 and farm_start['message'] == 'game already started':
+                        return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {datetime.fromtimestamp(farm_start['data']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}")
+                    elif farm_start['status'] == 500 and farm_start['message'] == 'game end need claim':
+                        return await self.farm_claim(token=token)
         except ClientResponseError as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Start Farm: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Farm Start: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Start Farm: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Farm Start: {str(e)} ]{Style.RESET_ALL}")
 
-    async def claim_farm(self, token: str):
+    async def farm_claim(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/farm/claim'
         data = json.dumps({'game_id':'53b22103-c7ff-413d-bc63-20f6fb806a07'})
         headers = {
@@ -316,20 +321,18 @@ class Tomarket:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
-                    claim_farm = await response.json()
-                    if 'status' in claim_farm:
-                        if claim_farm['status'] == 0:
-                            self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {claim_farm['data']['points']} From Farm ]{Style.RESET_ALL}")
-                            return await self.start_farm(token=token)
-                        elif claim_farm['status'] == 500 and claim_farm['message'] == 'farm not started or claimed':
-                            self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Not Started ]{Style.RESET_ALL}")
-                            return await self.start_farm(token=token)
+                    farm_claim = await response.json()
+                    if farm_claim['status'] == 0:
+                        self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {farm_claim['data']['points']} $TOMA From Farm ]{Style.RESET_ALL}")
+                        return await self.farm_start(token=token)
+                    elif farm_claim['status'] == 500 and farm_claim['message'] == 'farm not started or claimed':
+                        return await self.farm_start(token=token)
         except ClientResponseError as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Farm: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Farm Claim: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Farm: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Farm Claim: {str(e)} ]{Style.RESET_ALL}")
 
-    async def play_game(self, token: str):
+    async def game_play(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/game/play'
         data = json.dumps({'game_id':'59bcd12e-04e2-404c-a172-311a0084587d'})
         headers = {
@@ -343,24 +346,23 @@ class Tomarket:
                 async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                     async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                         response.raise_for_status()
-                        play_game = await response.json()
-                        if 'status' in play_game:
-                            if play_game['status'] == 0:
-                                self.print_timestamp(
-                                    f"{Fore.BLUE + Style.BRIGHT}[ Game Started ]{Style.RESET_ALL}"
-                                    f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                                    f"{Fore.YELLOW + Style.BRIGHT}[ Please Wait ~30 Seconds ]{Style.RESET_ALL}"
-                                )
-                                sleep(30 + random.randint(3, 5))
-                                await self.claim_game(token=token, points=random.randint(6000, 6001))
-                            elif play_game['status'] == 500 and play_game['message'] == 'no chance':
-                                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ No Chance To Start Game ]{Style.RESET_ALL}")
+                        game_play = await response.json()
+                        if game_play['status'] == 0:
+                            self.print_timestamp(
+                                f"{Fore.BLUE + Style.BRIGHT}[ Game Started ]{Style.RESET_ALL}"
+                                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                                f"{Fore.YELLOW + Style.BRIGHT}[ Please Wait ~30 Seconds ]{Style.RESET_ALL}"
+                            )
+                            await asyncio.sleep(33)
+                            await self.game_claim(token=token, points=random.randint(6000, 6001))
+                        elif game_play['status'] == 500 and game_play['message'] == 'no chance':
+                            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ No Chance To Start Game ]{Style.RESET_ALL}")
             except ClientResponseError as e:
-                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Play Game: {str(e)} ]{Style.RESET_ALL}")
+                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Game Play: {str(e)} ]{Style.RESET_ALL}")
             except Exception as e:
-                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Play Game: {str(e)} ]{Style.RESET_ALL}")
+                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Game Play: {str(e)} ]{Style.RESET_ALL}")
 
-    async def claim_game(self, token: str, points: int):
+    async def game_claim(self, token: str, points: int):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/game/claim'
         data = json.dumps({'game_id':'59bcd12e-04e2-404c-a172-311a0084587d','points':points})
         headers = {
@@ -373,19 +375,18 @@ class Tomarket:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
-                    claim_game = await response.json()
-                    if 'status' in claim_game:
-                        if claim_game['status'] == 0:
-                            return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {claim_game['data']['points']} From Game ]{Style.RESET_ALL}")
-                        elif claim_game['status'] == 500 and claim_game['message'] == 'game not start':
-                            self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Game Not Start ]{Style.RESET_ALL}")
-                            return await self.play_game(token=token)
+                    game_claim = await response.json()
+                    if game_claim['status'] == 0:
+                        return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {game_claim['data']['points']} $TOMA From Game Play ]{Style.RESET_ALL}")
+                    elif game_claim['status'] == 500 and game_claim['message'] == 'game not start':
+                        self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Game Not Start ]{Style.RESET_ALL}")
+                        return await self.play_game(token=token)
         except ClientResponseError as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Game: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Game Claim: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Game: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Game Claim: {str(e)} ]{Style.RESET_ALL}")
 
-    async def list_tasks(self, token: str):
+    async def tasks_list(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/list'
         data = json.dumps({'language_code':'en'})
         headers = {
@@ -399,46 +400,59 @@ class Tomarket:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
-                    list_tasks = await response.json()
-                    current_time = datetime.now().astimezone()
-                    await self.process_category(list_tasks['data'], token, current_time)
+                    tasks_list = await response.json()
+                    await self.process_category(tasks_list['data'], token)
         except ClientResponseError as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Tasks: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Tasks: {str(e)} ]{Style.RESET_ALL}")
 
-    async def process_task(self, task, token, current_time):
-        end_time = datetime.strptime(task['endTime'], '%Y-%m-%d %H:%M:%S').astimezone() if task.get('endTime') else None
+    async def process_category(self, category_data, token):
+        for category in category_data:
+            if isinstance(category_data[category], list):
+                for task in category_data[category]:
+                    await self.process_task(task, token)
+            elif isinstance(category_data[category], dict):
+                await self.process_category(category_data[category], token)
+
+    async def process_task(self, task, token):
         if (
-            (end_time and end_time < current_time) or
             ('walletAddress' in task['handleFunc'] or 'boost' in task['handleFunc'] or 'checkInvite' in task['handleFunc']) or
             ('classmate' in task['tag']) or
             ('classmate' in task['type'].lower())
         ): return
-
         wait_second = task.get('waitSecond', 0)
-        if task['status'] == 0 and task['type'] == "mysterious":
-            await self.claim_tasks(token, task['taskId'], task['title'], task['score'])
-            sleep(random.randint(3, 5))
-        elif task['status'] == 0:
-            await self.start_tasks(token, task['taskId'], task['title'], wait_second, task['score'])
-            sleep(random.randint(3, 5))
+        if task['status'] == 0:
+            await self.tasks_start(
+                token=token,
+                task_id=task['taskId'],
+                task_title=task['title'],
+                task_score=task['score'],
+                task_waitsecond=wait_second
+            )
         elif task['status'] == 1:
-            await self.check_tasks(token, task['taskId'], task['title'], task['score'])
-            sleep(random.randint(3, 5))
+            await self.tasks_check(
+                token=token,
+                task_id=task['taskId'],
+                task_title=task['title'],
+                task_score=task['score']
+            )
         elif task['status'] == 2:
-            await self.claim_tasks(token, task['taskId'], task['title'], task['score'])
-            sleep(random.randint(3, 5))
+            await self.tasks_claim(
+                token=token,
+                task_id=task['taskId'],
+                task_title=task['title'],
+                task_score=task['score']
+            )
 
-    async def process_category(self, category_data, token, current_time):
-        for category in category_data:
-            if isinstance(category_data[category], list):
-                for task in category_data[category]:
-                    await self.process_task(task, token, current_time)
-            elif isinstance(category_data[category], dict):
-                await self.process_category(category_data[category], token, current_time)
-
-    async def start_tasks(self, token: str, task_id: int, task_title: str, task_waitsecond: int, task_score: int):
+    async def tasks_start(
+        self,
+        token: str,
+        task_id: int,
+        task_title: str,
+        task_score: int,
+        task_waitsecond: int
+    ):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/start'
         data = json.dumps({'task_id':task_id})
         headers = {
@@ -451,30 +465,44 @@ class Tomarket:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
-                    start_tasks = await response.json()
-                    if 'status' in start_tasks:
-                        if start_tasks['status'] == 0:
-                            if start_tasks['data']['status'] == 1:
-                                self.print_timestamp(
-                                    f"{Fore.BLUE + Style.BRIGHT}[ {task_title} Started ]{Style.RESET_ALL}"
-                                    f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                                    f"{Fore.YELLOW + Style.BRIGHT}[ Please Wait ~{task_waitsecond} ]{Style.RESET_ALL}"
-                                )
-                                sleep(task_waitsecond + random.randint(3, 5))
-                                return await self.check_tasks(token=token, task_id=task_id, task_title=task_title, task_score=task_score)
-                            elif start_tasks['data']['status'] == 2:
-                                sleep(random.randint(3, 5))
-                                return await self.claim_tasks(token=token, task_id=task_id, task_title=task_title, task_score=task_score)
-                        elif start_tasks['status'] == 500 and start_tasks['message'] == 'Handle user\'s task error':
-                            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Finish {task_title} By Itself ]{Style.RESET_ALL}")
-                        elif start_tasks['status'] == 500 and start_tasks['message'] == 'Task handle is not exist':
-                            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {task_title} Is Not Exist ]{Style.RESET_ALL}")
+                    tasks_start = await response.json()
+                    if tasks_start['status'] == 0:
+                        if tasks_start['data']['status'] == 1:
+                            self.print_timestamp(
+                                f"{Fore.BLUE + Style.BRIGHT}[ {task_title} Started ]{Style.RESET_ALL}"
+                                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                                f"{Fore.YELLOW + Style.BRIGHT}[ Please Wait ~{task_waitsecond} ]{Style.RESET_ALL}"
+                            )
+                            await asyncio.sleep(task_waitsecond + random.randint(3, 5))
+                            return await self.tasks_check(
+                                token=token,
+                                task_id=task_id,
+                                task_title=task_title,
+                                task_score=task_score
+                            )
+                        elif tasks_start['data']['status'] == 2:
+                            return await self.tasks_claim(
+                                token=token,
+                                task_id=task_id,
+                                task_title=task_title,
+                                task_score=task_score
+                            )
+                    elif tasks_start['status'] == 500 and tasks_start['message'] == 'Handle user\'s task error':
+                        return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Finish {task_title} By Itself ]{Style.RESET_ALL}")
+                    elif tasks_start['status'] == 500 and tasks_start['message'] == 'Task handle is not exist':
+                        return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {task_title} Is Not Exist ]{Style.RESET_ALL}")
         except ClientResponseError as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Start Tasks: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Tasks Start: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Start Tasks: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Tasks Start: {str(e)} ]{Style.RESET_ALL}")
 
-    async def check_tasks(self, token: str, task_id: int, task_title: str, task_score: int):
+    async def tasks_check(
+        self,
+        token: str,
+        task_id: int,
+        task_title: str,
+        task_score: int
+    ):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/check'
         data = json.dumps({'task_id':task_id})
         headers = {
@@ -487,18 +515,27 @@ class Tomarket:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
-                    check_tasks = await response.json()
-                    if 'status' in check_tasks:
-                        if check_tasks['status'] == 0:
-                            if check_tasks['data']['status'] == 2:
-                                sleep(random.randint(3, 5))
-                                return await self.claim_tasks(token=token, task_id=task_id, task_title=task_title, task_score=task_score)
+                    tasks_check = await response.json()
+                    if tasks_check['status'] == 0:
+                        if tasks_check['data']['status'] == 2:
+                            return await self.tasks_claim(
+                                token=token,
+                                task_id=task_id,
+                                task_title=task_title,
+                                task_score=task_score
+                            )
         except ClientResponseError as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Check Tasks: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Check Tasks: {str(e)} ]{Style.RESET_ALL}")
 
-    async def claim_tasks(self, token: str, task_id: int, task_title: str, task_score: int):
+    async def tasks_claim(
+        self,
+        token: str,
+        task_id: int,
+        task_title: str,
+        task_score: int
+    ):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/claim'
         data = json.dumps({'task_id':task_id})
         headers = {
@@ -511,36 +548,22 @@ class Tomarket:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
-                    claim_tasks = await response.json()
-                    if 'status' in claim_tasks:
-                        if claim_tasks['status'] == 0:
-                            return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {task_score} From {task_title} ]{Style.RESET_ALL}")
-                        elif claim_tasks['status'] == 500 and claim_tasks['message'] == 'You haven\'t start this task':
+                    tasks_claim = await response.json()
+                    if 'status' in tasks_claim:
+                        if tasks_claim['status'] == 0:
+                            return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {task_score} $TOMA From {task_title} ]{Style.RESET_ALL}")
+                        elif tasks_claim['status'] == 500 and tasks_claim['message'] == 'You haven\'t start this task':
                             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ You Haven\'t Start {task_title} ]{Style.RESET_ALL}")
-                        elif claim_tasks['status'] == 500 and claim_tasks['message'] == 'You haven\'t finished this task':
+                        elif tasks_claim['status'] == 500 and tasks_claim['message'] == 'You haven\'t finished this task':
                             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ You Haven\'t Finished {task_title} ]{Style.RESET_ALL}")
-                        elif claim_tasks['status'] == 500 and claim_tasks['message'] == 'Task is not within the valid time':
+                        elif tasks_claim['status'] == 500 and tasks_claim['message'] == 'Task is not within the valid time':
                             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {task_title} Isn\'t Within The Valid Time ]{Style.RESET_ALL}")
         except ClientResponseError as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Tasks Claim: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Tasks Claim: {str(e)} ]{Style.RESET_ALL}")
 
-    async def answers(self):
-        url = 'https://raw.githubusercontent.com/Shyzg/answer/refs/heads/main/answer.json'
-        try:
-            async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.get(url=url, ssl=False) as response:
-                    response.raise_for_status()
-                    return json.loads(await response.text())
-        except ClientResponseError as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Get Task Answer: {str(e)} ]{Style.RESET_ALL}")
-            return None
-        except Exception as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Get Task Answer: {str(e)} ]{Style.RESET_ALL}")
-            return None
-
-    async def puzzle_tasks(self, token: str):
+    async def tasks_puzzle(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/puzzle'
         data = json.dumps({'language_code':'en'})
         headers = {
@@ -553,20 +576,54 @@ class Tomarket:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
-                    puzzle_tasks = await response.json()
-                    answers = await self.answers()
-                    for task in puzzle_tasks['data']:
-                        if task['status'] == 0:
-                            if datetime.fromtimestamp(answers['tomarket']['expires']).astimezone().timestamp() > datetime.now().astimezone().timestamp():
-                                return await self.claim_puzzle_tasks(token=token, task_id=task['taskId'], task_name=task['name'], task_score=task['score'], task_games=task['games'], task_star=task['star'], answer=answers['tomarket']['answer'])
+                    return await response.json()
         except ClientResponseError as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
+            return None
         except Exception as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
+            return None
 
-    async def claim_puzzle_tasks(self, token: str, task_id: int, task_name: str, task_score: int, task_games: int, task_star: int, answer: str):
+    async def answer(self, token: str):
+        url = 'https://raw.githubusercontent.com/Shyzg/answer/refs/heads/main/answer.json'
+        try:
+            async with ClientSession(timeout=ClientTimeout(total=20)) as session:
+                async with session.get(url=url, ssl=False) as response:
+                    response.raise_for_status()
+                    answer = json.loads(await response.text())
+                    tasks_puzzle = await self.tasks_puzzle(token=token)
+                    if tasks_puzzle is not None:
+                        if tasks_puzzle['status'] == 0:
+                            for puzzle in tasks_puzzle['data']:
+                                if puzzle['status'] == 0:
+                                    return await self.tasks_puzzle_claim(
+                                        token=token,
+                                        puzzle_id=puzzle['taskId'],
+                                        puzzle_name=puzzle['name'],
+                                        puzzle_star=puzzle['star'],
+                                        puzzle_games=puzzle['games'],
+                                        puzzle_score=puzzle['score'],
+                                        answer=answer['tomarket']['answer']
+                                    )
+        except ClientResponseError as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Answer: {str(e)} ]{Style.RESET_ALL}")
+            return None
+        except Exception as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Answer: {str(e)} ]{Style.RESET_ALL}")
+            return None
+
+    async def tasks_puzzle_claim(
+        self,
+        token: str,
+        puzzle_id: int,
+        puzzle_name: str,
+        puzzle_star: int,
+        puzzle_games: int,
+        puzzle_score: int,
+        answer: str
+    ):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/puzzleClaim'
-        data = json.dumps({'task_id':task_id,'code':answer})
+        data = json.dumps({'task_id':puzzle_id,'code':answer})
         headers = {
             **self.headers,
             'Authorization': token,
@@ -577,15 +634,15 @@ class Tomarket:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
-                    claim_puzzle_tasks = await response.json()
-                    if claim_puzzle_tasks['status'] == 0:
-                        return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {task_score} Tomato, {task_games} Ticket, And {task_star} Star From {task_name} ]{Style.RESET_ALL}")
+                    tasks_puzzle_claim = await response.json()
+                    if tasks_puzzle_claim['status'] == 0:
+                        return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {puzzle_star} Tomarket Stars, {puzzle_games} Ticket, And {puzzle_score} $TOMA From {puzzle_name} ]{Style.RESET_ALL}")
         except ClientResponseError as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
 
-    async def assets_spin(self, token: str):
+    async def spin_assets(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/spin/assets'
         data = json.dumps({'language_code':'en'})
         headers = {
@@ -597,44 +654,17 @@ class Tomarket:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
-                    assets_spin = await response.json()
-                    if 'status' in assets_spin:
-                        if assets_spin['status'] == 0:
-                            for balance in assets_spin['data']['balances']:
-                                if balance['balance_type'] == 'Star':
-                                    if balance['balance'] == 0:
-                                        return self.print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ You Didn\'t Have Tomarket Star ]{Style.RESET_ALL}")
-                                    return await self.raffle_spin(token=token, category='tomarket')
+                    spin_assets = await response.json()
+                    if spin_assets['status'] == 0:
+                        for category in ['tomarket', 'ticket_spin_1']:
+                            await self.spin_raffle(token=token, category=category)
+                            await asyncio.sleep(3)
         except ClientResponseError as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Assets Spin: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Spin Assets: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Assets Spin: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Spin Assets: {str(e)} ]{Style.RESET_ALL}")
 
-    async def tickets_user(self, token: str):
-        url = 'https://api-web.tomarket.ai/tomarket-game/v1/user/tickets'
-        data = json.dumps({'language_code':'en'})
-        headers = {
-            'Authorization': token,
-            'Content-Length': str(len(data)),
-            'Content-Type': 'application/json'
-        }
-        try:
-            async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
-                    response.raise_for_status()
-                    tickets_user = await response.json()
-                    if 'status' in tickets_user:
-                        if tickets_user['status'] == 0:
-                            while tickets_user['data']['ticket_spin_1'] > 0:
-                                await self.raffle_spin(token=token, category='ticket_spin_1')
-                                sleep(random.randint(3, 5))
-                                tickets_user['data']['ticket_spin_1'] -= 1
-        except ClientResponseError as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Tickets User: {str(e)} ]{Style.RESET_ALL}")
-        except Exception as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Tickets User: {str(e)} ]{Style.RESET_ALL}")
-
-    async def raffle_spin(self, token: str, category: str):
+    async def spin_raffle(self, token: str, category: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/spin/raffle'
         data = json.dumps({'category':category})
         headers = {
@@ -642,23 +672,28 @@ class Tomarket:
             'Content-Length': str(len(data)),
             'Content-Type': 'application/json'
         }
-        try:
-            async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
-                    response.raise_for_status()
-                    raffle_spin = await response.json()
-                    if 'status' in raffle_spin:
-                        if raffle_spin['status'] == 0:
-                            for result in raffle_spin['data']['results']:
+        while True:
+            try:
+                async with ClientSession(timeout=ClientTimeout(total=20)) as session:
+                    async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
+                        response.raise_for_status()
+                        spin_raffle = await response.json()
+                        if spin_raffle['status'] == 0:
+                            if 'isPassed' in spin_raffle['data']:
+                                if not spin_raffle['data']['isPassed']:
+                                    return None
+                            for result in spin_raffle['data']['results']:
                                 self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {result['amount']} {result['type']} From Raffle Spin ]{Style.RESET_ALL}")
-                        elif raffle_spin['status'] == 400 and raffle_spin['message'] == 'Max 3 spins per day using Tomarket Stars.':
-                            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Max 3 Spins Per Day Using Tomarket Stars ]{Style.RESET_ALL}")
-                        elif raffle_spin['status'] == 500 and raffle_spin['message'] == 'Not enough ticket_spin_1 ticket':
+                        elif spin_raffle['status'] == 400 and spin_raffle['message'] == 'Please wait 2 seconds before spinning again.':
+                            self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Please Wait 2 Seconds Before Spinning Again ]{Style.RESET_ALL}")
+                        elif spin_raffle['status'] == 400 and spin_raffle['message'] == 'Max 3 spins per day using Tomarket Stars.':
+                            return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Max 3 Spins Per Day Using Tomarket Stars ]{Style.RESET_ALL}")
+                        elif spin_raffle['status'] == 500 and spin_raffle['message'] == 'Not enough ticket_spin_1 ticket':
                             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Not Enough Free Spin Tickets ]{Style.RESET_ALL}")
-        except ClientResponseError as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Raffle Spin: {str(e)} ]{Style.RESET_ALL}")
-        except Exception as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Raffle Spin: {str(e)} ]{Style.RESET_ALL}")
+            except ClientResponseError as e:
+                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Spin Raffle: {str(e)} ]{Style.RESET_ALL}")
+            except Exception as e:
+                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Spin Raffle: {str(e)} ]{Style.RESET_ALL}")
 
     async def main(self, accounts):
         while True:
@@ -666,77 +701,68 @@ class Tomarket:
                 farming_times = []
                 total_balance = 0
 
-                for account in accounts:
+                for (token, first_name) in accounts:
                     self.print_timestamp(
                         f"{Fore.WHITE + Style.BRIGHT}[ Home ]{Style.RESET_ALL}"
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
+                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                     )
-                    await self.claim_daily(token=account['token'])
-                    sleep(random.randint(3, 5))
-                    balance = await self.balance_user(token=account['token'])
-                    sleep(random.randint(3, 5))
+                    await self.daily_claim(token=token)
+                    await asyncio.sleep(3)
+                    balance = await self.user_balance(token=token)
+                    await asyncio.sleep(3)
                     if balance is not None:
                         self.print_timestamp(
-                            f"{Fore.GREEN + Style.BRIGHT}[ Balance {balance['data']['available_balance']} ]{Style.RESET_ALL}"
+                            f"{Fore.GREEN + Style.BRIGHT}[ {int(float(balance['data']['available_balance']))} $TOMA ]{Style.RESET_ALL}"
                             f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                             f"{Fore.BLUE + Style.BRIGHT}[ Play Passes {balance['data']['play_passes']} ]{Style.RESET_ALL}"
                         )
                         if 'farming' in balance['data']:
                             if datetime.now().astimezone() >= datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone():
-                                await self.claim_farm(token=account['token'])
-                                sleep(random.randint(3, 5))
+                                await self.farm_claim(token=token)
                             else:
                                 farming_times.append(datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone().timestamp())
                                 self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}")
                         else:
-                            await self.start_farm(token=account['token'])
-                            sleep(random.randint(3, 5))
+                            await self.farm_start(token=token)
                         total_balance += int(float(balance['data']['available_balance']))
 
-                sleep(random.randint(5, 7))
-                for account in accounts:
-                    self.print_timestamp(
-                        f"{Fore.WHITE + Style.BRIGHT}[ Home/Rank ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
-                    )
-                    await self.data_rank(token=account['token'])
-                    sleep(random.randint(3, 5))
-
-                sleep(random.randint(5, 7))
-                for account in accounts:
-                    self.print_timestamp(
-                        f"{Fore.WHITE + Style.BRIGHT}[ Home/Play Passes ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
-                    )
-                    await self.play_game(token=account['token'])
-                    sleep(random.randint(3, 5))
-
-                sleep(random.randint(5, 7))
-                for account in accounts:
-                    self.print_timestamp(
-                        f"{Fore.WHITE + Style.BRIGHT}[ Tasks ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
-                    )
-                    await self.list_tasks(token=account['token'])
-                    sleep(random.randint(3, 5))
-                    await self.puzzle_tasks(token=account['token'])
-                    sleep(random.randint(3, 5))
-
-                sleep(random.randint(5, 7))
-                for account in accounts:
+                for (token, first_name) in accounts:
                     self.print_timestamp(
                         f"{Fore.WHITE + Style.BRIGHT}[ Spin ]{Style.RESET_ALL}"
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
+                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                     )
-                    await self.assets_spin(token=account['token'])
-                    sleep(random.randint(3, 5))
-                    await self.tickets_user(token=account['token'])
-                    sleep(random.randint(3, 5))
+                    await self.spin_assets(token=token)
+                    await asyncio.sleep(3)
+
+                for (token, first_name) in accounts:
+                    self.print_timestamp(
+                        f"{Fore.WHITE + Style.BRIGHT}[ Home/Rank ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                    )
+                    await self.rank_data(token=token)
+                    await asyncio.sleep(3)
+
+                for (token, first_name) in accounts:
+                    self.print_timestamp(
+                        f"{Fore.WHITE + Style.BRIGHT}[ Home/Play Passes ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                    )
+                    await self.game_play(token=token)
+                    await asyncio.sleep(3)
+
+                for (token, first_name) in accounts:
+                    self.print_timestamp(
+                        f"{Fore.WHITE + Style.BRIGHT}[ Tasks ]{Style.RESET_ALL}"
+                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                        f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
+                    )
+                    await self.tasks_list(token=token)
+                    await self.answer(token=token)
+                    await asyncio.sleep(3)
 
                 if farming_times:
                     wait_times = [farm_end_time - datetime.now().astimezone().timestamp() for farm_end_time in farming_times if farm_end_time > datetime.now().astimezone().timestamp()]
@@ -764,62 +790,67 @@ if __name__ == '__main__':
     try:
         if sys.platform == 'win32':
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
         init(autoreset=True)
-
         tomarket = Tomarket()
-
-        account_files = [f for f in os.listdir() if f.startswith('accounts-') and f.endswith('.json')]
-        account_files.sort(key=lambda x: int(re.findall(r'\d+', x)[0]))
-
-        tomarket.print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Select an option ]{Style.RESET_ALL}")
         tomarket.print_timestamp(
-            f"{Fore.MAGENTA + Style.BRIGHT}[ 1 ]{Style.RESET_ALL}"
+            f"{Fore.GREEN + Style.BRIGHT}[ 1 ]{Style.RESET_ALL}"
             f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-            f"{Fore.CYAN + Style.BRIGHT}[ Generate Tokens ]{Style.RESET_ALL}"
+            f"{Fore.BLUE + Style.BRIGHT}[ Generate Tokens ]{Style.RESET_ALL}"
         )
         tomarket.print_timestamp(
-            f"{Fore.MAGENTA + Style.BRIGHT}[ 2 ]{Style.RESET_ALL}"
+            f"{Fore.GREEN + Style.BRIGHT}[ 2 ]{Style.RESET_ALL}"
             f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-            f"{Fore.CYAN + Style.BRIGHT}[ Use Existing accounts-*.json ]{Style.RESET_ALL}"
+            f"{Fore.BLUE + Style.BRIGHT}[ Use Existing accounts-*.json ]{Style.RESET_ALL}"
         )
 
         initial_choice = int(input(
-            f"{Fore.CYAN + Style.BRIGHT}[ Enter The Number Corresponding To Your Choice ]{Style.RESET_ALL}"
+            f"{Fore.BLUE + Style.BRIGHT}[ {datetime.now().astimezone().strftime('%x %X %Z')} ]{Style.RESET_ALL}"
+            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+            f"{Fore.YELLOW + Style.BRIGHT}[ Select Option ]{Style.RESET_ALL}"
             f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
         ))
         if initial_choice == 1:
-            tomarket.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Processing Queries to Generate Tokens ]{Style.RESET_ALL}")
-            asyncio.run(tomarket.process_queries())
-            tomarket.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Token Generation Completed ]{Style.RESET_ALL}")
+            lines_per_file = int(input(
+                f"{Fore.BLUE + Style.BRIGHT}[ {datetime.now().astimezone().strftime('%x %X %Z')} ]{Style.RESET_ALL}"
+                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                f"{Fore.YELLOW + Style.BRIGHT}[ How Much Accounts In 'accounts-*.json'? ]{Style.RESET_ALL}"
+                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+            ))
+            if lines_per_file <= 0:
+                raise ValueError("The Number Must Be Greater Than Zero.")
+            asyncio.run(tomarket.process_queries(lines_per_file=lines_per_file))
 
             account_files = [f for f in os.listdir() if f.startswith('accounts-') and f.endswith('.json')]
             account_files.sort(key=lambda x: int(re.findall(r'\d+', x)[0]))
-
             if not account_files:
                 raise FileNotFoundError("No 'accounts-*.json' Files Found In The Directory. Please Generate Tokens First By Selecting Option 1.")
         elif initial_choice == 2:
+            account_files = [f for f in os.listdir() if f.startswith('accounts-') and f.endswith('.json')]
+            account_files.sort(key=lambda x: int(re.findall(r'\d+', x)[0]))
             if not account_files:
                 raise FileNotFoundError("No 'accounts-*.json' Files Found In The Directory. Please Generate Tokens First By Selecting Option 1.")
         else:
             raise ValueError("Invalid Initial Choice. Please Run The Script Again And Choose A Valid Option")
 
-        tomarket.print_timestamp(f"{Fore.MAGENTA + Style.BRIGHT}[ Select The Accounts File To Use ]{Style.RESET_ALL}")
         for i, accounts_file in enumerate(account_files, start=1):
             tomarket.print_timestamp(
-                f"{Fore.MAGENTA + Style.BRIGHT}[ {i} ]{Style.RESET_ALL}"
+                f"{Fore.GREEN + Style.BRIGHT}[ {i} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.CYAN + Style.BRIGHT}[ {accounts_file} ]{Style.RESET_ALL}"
+                f"{Fore.BLUE + Style.BRIGHT}[ {accounts_file} ]{Style.RESET_ALL}"
             )
 
         choice = int(input(
-            f"{Fore.CYAN + Style.BRIGHT}[ Enter The Number Corresponding To The File You Want To Use ]{Style.RESET_ALL}"
+            f"{Fore.BLUE + Style.BRIGHT}[ {datetime.now().astimezone().strftime('%x %X %Z')} ]{Style.RESET_ALL}"
+            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+            f"{Fore.YELLOW + Style.BRIGHT}[ Select File You Want To Use ]{Style.RESET_ALL}"
             f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
         )) - 1
         if choice < 0 or choice >= len(account_files):
             raise ValueError("Invalid Choice. Please Run The Script Again And Choose A Valid Option")
 
         selected_accounts_file = account_files[choice]
-        accounts = tomarket.load_accounts_from_file(selected_accounts_file)
+        accounts = asyncio.run(tomarket.load_from_json(selected_accounts_file))
 
         asyncio.run(tomarket.main(accounts))
     except (ValueError, IndexError, FileNotFoundError) as e:
