@@ -526,6 +526,65 @@ class Tomarket:
         except Exception as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
 
+    async def answers(self):
+        url = 'https://raw.githubusercontent.com/Shyzg/answer/refs/heads/main/answer.json'
+        try:
+            async with ClientSession(timeout=ClientTimeout(total=20)) as session:
+                async with session.get(url=url, ssl=False) as response:
+                    response.raise_for_status()
+                    return json.loads(await response.text())
+        except ClientResponseError as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Get Task Answer: {str(e)} ]{Style.RESET_ALL}")
+            return None
+        except Exception as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Get Task Answer: {str(e)} ]{Style.RESET_ALL}")
+            return None
+
+    async def puzzle_tasks(self, token: str):
+        url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/puzzle'
+        data = json.dumps({'language_code':'en'})
+        headers = {
+            **self.headers,
+            'Authorization': token,
+            'Content-Length': str(len(data)),
+            'Content-Type': 'application/json'
+        }
+        try:
+            async with ClientSession(timeout=ClientTimeout(total=20)) as session:
+                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
+                    response.raise_for_status()
+                    puzzle_tasks = await response.json()
+                    answers = await self.answers()
+                    for task in puzzle_tasks['data']:
+                        if task['status'] == 0:
+                            if datetime.fromtimestamp(answers['tomarket']['expires']).astimezone().timestamp() > datetime.now().astimezone().timestamp():
+                                return await self.claim_puzzle_tasks(token=token, task_id=task['taskId'], task_name=task['name'], task_score=task['score'], task_games=task['games'], task_star=task['star'], answer=answers['tomarket']['answer'])
+        except ClientResponseError as e:
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
+        except Exception as e:
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
+
+    async def claim_puzzle_tasks(self, token: str, task_id: int, task_name: str, task_score: int, task_games: int, task_star: int, answer: str):
+        url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/puzzleClaim'
+        data = json.dumps({'task_id':task_id,'code':answer})
+        headers = {
+            **self.headers,
+            'Authorization': token,
+            'Content-Length': str(len(data)),
+            'Content-Type': 'application/json'
+        }
+        try:
+            async with ClientSession(timeout=ClientTimeout(total=20)) as session:
+                async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
+                    response.raise_for_status()
+                    claim_puzzle_tasks = await response.json()
+                    if claim_puzzle_tasks['status'] == 0:
+                        return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {task_score} Tomato, {task_games} Ticket, And {task_star} Star From {task_name} ]{Style.RESET_ALL}")
+        except ClientResponseError as e:
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
+        except Exception as e:
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
+
     async def assets_spin(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/spin/assets'
         data = json.dumps({'language_code':'en'})
