@@ -723,6 +723,8 @@ class Tomarket:
                     )
                     await self.list_tasks(token=account['token'])
                     sleep(random.randint(3, 5))
+                    await self.puzzle_tasks(token=account['token'])
+                    sleep(random.randint(3, 5))
 
                 sleep(random.randint(5, 7))
                 for account in accounts:
