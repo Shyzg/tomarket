@@ -666,77 +666,77 @@ class Tomarket:
                 farming_times = []
                 total_balance = 0
 
-                for account in accounts:
-                    self.print_timestamp(
-                        f"{Fore.WHITE + Style.BRIGHT}[ Home ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
-                    )
-                    await self.claim_daily(token=account['token'])
-                    sleep(random.randint(3, 5))
-                    balance = await self.balance_user(token=account['token'])
-                    sleep(random.randint(3, 5))
-                    if balance is not None:
-                        self.print_timestamp(
-                            f"{Fore.GREEN + Style.BRIGHT}[ Balance {balance['data']['available_balance']} ]{Style.RESET_ALL}"
-                            f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                            f"{Fore.BLUE + Style.BRIGHT}[ Play Passes {balance['data']['play_passes']} ]{Style.RESET_ALL}"
-                        )
-                        if 'farming' in balance['data']:
-                            if datetime.now().astimezone() >= datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone():
-                                await self.claim_farm(token=account['token'])
-                                sleep(random.randint(3, 5))
-                            else:
-                                farming_times.append(datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone().timestamp())
-                                self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}")
-                        else:
-                            await self.start_farm(token=account['token'])
-                            sleep(random.randint(3, 5))
-                        total_balance += int(float(balance['data']['available_balance']))
+                # for account in accounts:
+                #     self.print_timestamp(
+                #         f"{Fore.WHITE + Style.BRIGHT}[ Home ]{Style.RESET_ALL}"
+                #         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                #         f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
+                #     )
+                #     await self.claim_daily(token=account['token'])
+                #     sleep(random.randint(3, 5))
+                #     balance = await self.balance_user(token=account['token'])
+                #     sleep(random.randint(3, 5))
+                #     if balance is not None:
+                #         self.print_timestamp(
+                #             f"{Fore.GREEN + Style.BRIGHT}[ Balance {balance['data']['available_balance']} ]{Style.RESET_ALL}"
+                #             f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                #             f"{Fore.BLUE + Style.BRIGHT}[ Play Passes {balance['data']['play_passes']} ]{Style.RESET_ALL}"
+                #         )
+                #         if 'farming' in balance['data']:
+                #             if datetime.now().astimezone() >= datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone():
+                #                 await self.claim_farm(token=account['token'])
+                #                 sleep(random.randint(3, 5))
+                #             else:
+                #                 farming_times.append(datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone().timestamp())
+                #                 self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Farm Can Be Claim At {datetime.fromtimestamp(balance['data']['farming']['end_at']).astimezone().strftime('%X %Z')} ]{Style.RESET_ALL}")
+                #         else:
+                #             await self.start_farm(token=account['token'])
+                #             sleep(random.randint(3, 5))
+                #         total_balance += int(float(balance['data']['available_balance']))
 
-                sleep(random.randint(5, 7))
-                for account in accounts:
-                    self.print_timestamp(
-                        f"{Fore.WHITE + Style.BRIGHT}[ Home/Rank ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
-                    )
-                    await self.data_rank(token=account['token'])
-                    sleep(random.randint(3, 5))
+                # sleep(random.randint(5, 7))
+                # for account in accounts:
+                #     self.print_timestamp(
+                #         f"{Fore.WHITE + Style.BRIGHT}[ Home/Rank ]{Style.RESET_ALL}"
+                #         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                #         f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
+                #     )
+                #     await self.data_rank(token=account['token'])
+                #     sleep(random.randint(3, 5))
 
-                sleep(random.randint(5, 7))
-                for account in accounts:
-                    self.print_timestamp(
-                        f"{Fore.WHITE + Style.BRIGHT}[ Home/Play Passes ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
-                    )
-                    await self.play_game(token=account['token'])
-                    sleep(random.randint(3, 5))
+                # sleep(random.randint(5, 7))
+                # for account in accounts:
+                #     self.print_timestamp(
+                #         f"{Fore.WHITE + Style.BRIGHT}[ Home/Play Passes ]{Style.RESET_ALL}"
+                #         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                #         f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
+                #     )
+                #     await self.play_game(token=account['token'])
+                #     sleep(random.randint(3, 5))
 
-                sleep(random.randint(5, 7))
+                # sleep(random.randint(5, 7))
                 for account in accounts:
                     self.print_timestamp(
                         f"{Fore.WHITE + Style.BRIGHT}[ Tasks ]{Style.RESET_ALL}"
                         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
                         f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
                     )
-                    await self.list_tasks(token=account['token'])
-                    sleep(random.randint(3, 5))
+                    # await self.list_tasks(token=account['token'])
+                    # sleep(random.randint(3, 5))
                     await self.puzzle_tasks(token=account['token'])
                     sleep(random.randint(3, 5))
 
-                sleep(random.randint(5, 7))
-                for account in accounts:
-                    self.print_timestamp(
-                        f"{Fore.WHITE + Style.BRIGHT}[ Spin ]{Style.RESET_ALL}"
-                        f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                        f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
-                    )
-                    await self.assets_spin(token=account['token'])
-                    sleep(random.randint(3, 5))
-                    await self.tickets_user(token=account['token'])
-                    sleep(random.randint(3, 5))
+                # sleep(random.randint(5, 7))
+                # for account in accounts:
+                #     self.print_timestamp(
+                #         f"{Fore.WHITE + Style.BRIGHT}[ Spin ]{Style.RESET_ALL}"
+                #         f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
+                #         f"{Fore.CYAN + Style.BRIGHT}[ {account['first_name']} ]{Style.RESET_ALL}"
+                #     )
+                #     await self.assets_spin(token=account['token'])
+                #     sleep(random.randint(3, 5))
+                #     await self.tickets_user(token=account['token'])
+                #     sleep(random.randint(3, 5))
 
                 if farming_times:
                     wait_times = [farm_end_time - datetime.now().astimezone().timestamp() for farm_end_time in farming_times if farm_end_time > datetime.now().astimezone().timestamp()]
