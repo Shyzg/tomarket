@@ -2,6 +2,7 @@ __pycache__
 .vscode
 development
 venv
+bot
 .DS_Store
 *.json
 !queries.txt

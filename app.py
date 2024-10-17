@@ -7,7 +7,6 @@ from colorama import *
 from datetime import datetime, timedelta
 from fake_useragent import FakeUserAgent
 from faker import Faker
-from time import sleep
 import asyncio, json, os, random, re, sys
 
 class Tomarket:
@@ -65,9 +64,9 @@ class Tomarket:
             for token_data in token_data_list:
                 first_name = token_data['first_name']
                 if first_name in existing_accounts:
-                    for acc in accounts:
-                        if acc['first_name'] == first_name:
-                            acc['token'] = token_data['token']
+                    for account in accounts:
+                        if account['first_name'] == first_name:
+                            account['token'] = token_data['token']
                 else:
                     new_accounts.append(token_data)
                     existing_accounts[first_name] = token_data['token']
@@ -226,7 +225,7 @@ class Tomarket:
                             self.print_timestamp(
                                 f"{Fore.GREEN + Style.BRIGHT}[ Rank Created ]{Style.RESET_ALL}"
                                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                                f"{Fore.BLUE + Style.BRIGHT}[ Rank {rank_create['data']['currentRank']['name']} ]{Style.RESET_ALL}"
+                                f"{Fore.BLUE + Style.BRIGHT}[ Current Rank {rank_create['data']['currentRank']['name']} ]{Style.RESET_ALL}"
                             )
                             return await self.rank_upgrade(token=token, stars=rank_create['data']['unusedStars'])
                     elif rank_create['status'] == 427 and rank_create['message'] == 'Rank value has already been initialized':
@@ -257,7 +256,7 @@ class Tomarket:
                         return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ You Doesn\'t Have A Rank ]{Style.RESET_ALL}")
                     elif rank_upgrade['status'] == 500 and rank_upgrade['message'] == f'You dose not have enough stars {stars}':
                         return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ You Doesn\'t Have Enough {stars} Stars ]{Style.RESET_ALL}")
-                    elif rank_upgrade['status'] == 500 and rank_upgrade['message'] == f'Star must be greater than zero':
+                    elif rank_upgrade['status'] == 500 and rank_upgrade['message'] == 'Star must be greater than zero':
                         return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Stars Must Be Greater Than Zero ]{Style.RESET_ALL}")
         except ClientResponseError as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Rank Upgrade: {str(e)} ]{Style.RESET_ALL}")
@@ -563,6 +562,20 @@ class Tomarket:
         except Exception as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Tasks Claim: {str(e)} ]{Style.RESET_ALL}")
 
+    async def answer(self):
+        url = 'https://raw.githubusercontent.com/Shyzg/answer/refs/heads/main/answer.json'
+        try:
+            async with ClientSession(timeout=ClientTimeout(total=20)) as session:
+                async with session.get(url=url, ssl=False) as response:
+                    response.raise_for_status()
+                    return json.loads(await response.text())
+        except ClientResponseError as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Answer: {str(e)} ]{Style.RESET_ALL}")
+            return None
+        except Exception as e:
+            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Answer: {str(e)} ]{Style.RESET_ALL}")
+            return None
+
     async def tasks_puzzle(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/tasks/puzzle'
         data = json.dumps({'language_code':'en'})
@@ -576,23 +589,9 @@ class Tomarket:
             async with ClientSession(timeout=ClientTimeout(total=20)) as session:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
-                    return await response.json()
-        except ClientResponseError as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
-            return None
-        except Exception as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
-            return None
-
-    async def answer(self, token: str):
-        url = 'https://raw.githubusercontent.com/Shyzg/answer/refs/heads/main/answer.json'
-        try:
-            async with ClientSession(timeout=ClientTimeout(total=20)) as session:
-                async with session.get(url=url, ssl=False) as response:
-                    response.raise_for_status()
-                    answer = json.loads(await response.text())
-                    tasks_puzzle = await self.tasks_puzzle(token=token)
-                    if tasks_puzzle is not None:
+                    tasks_puzzle = await response.json()
+                    answer = await self.answer()
+                    if answer is not None:
                         if tasks_puzzle['status'] == 0:
                             for puzzle in tasks_puzzle['data']:
                                 if puzzle['status'] == 0:
@@ -606,11 +605,9 @@ class Tomarket:
                                         answer=answer['tomarket']['answer']
                                     )
         except ClientResponseError as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Answer: {str(e)} ]{Style.RESET_ALL}")
-            return None
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Answer: {str(e)} ]{Style.RESET_ALL}")
-            return None
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
 
     async def tasks_puzzle_claim(
         self,
@@ -636,6 +633,10 @@ class Tomarket:
                     response.raise_for_status()
                     tasks_puzzle_claim = await response.json()
                     if tasks_puzzle_claim['status'] == 0:
+                        if tasks_puzzle_claim['data']['status'] == 1 and tasks_puzzle_claim['data']['message'] == 'Must complement relation task':
+                            return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ You\'re Missing A Step, Look At The Task Page! ]{Style.RESET_ALL}")
+                        if tasks_puzzle_claim['data']['status'] == 2 and tasks_puzzle_claim['data']['message'] == 'The result is incorrect':
+                            return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Oh No, That\'s Incorrect. Watch The Video Carefully ]{Style.RESET_ALL}")
                         return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {puzzle_star} Tomarket Stars, {puzzle_games} Ticket, And {puzzle_score} $TOMA From {puzzle_name} ]{Style.RESET_ALL}")
         except ClientResponseError as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
@@ -780,7 +781,7 @@ class Tomarket:
                 )
                 self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Restarting At {(datetime.now().astimezone() + timedelta(seconds=sleep_time)).strftime('%X %Z')} ]{Style.RESET_ALL}")
 
-                sleep(sleep_time)
+                await asyncio.sleep(sleep_time)
                 self.clear_terminal()
             except Exception as e:
                 self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {str(e)} ]{Style.RESET_ALL}")
