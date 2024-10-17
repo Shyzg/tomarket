@@ -681,8 +681,7 @@ class Tomarket:
                         spin_raffle = await response.json()
                         if spin_raffle['status'] == 0:
                             if 'isPassed' in spin_raffle['data']:
-                                if not spin_raffle['data']['isPassed']:
-                                    return None
+                                if not spin_raffle['data']['isPassed']: return None
                             for result in spin_raffle['data']['results']:
                                 self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {result['amount']} {result['type']} From Raffle Spin ]{Style.RESET_ALL}")
                         elif spin_raffle['status'] == 400 and spin_raffle['message'] == 'Please wait 2 seconds before spinning again.':
@@ -762,7 +761,7 @@ class Tomarket:
                         f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                     )
                     await self.tasks_list(token=token)
-                    await self.answer(token=token)
+                    await self.tasks_puzzle(token=token)
                     await asyncio.sleep(3)
 
                 if farming_times:
@@ -777,7 +776,7 @@ class Tomarket:
                 self.print_timestamp(
                     f"{Fore.CYAN + Style.BRIGHT}[ Total Account {len(accounts)} ]{Style.RESET_ALL}"
                     f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                    f"{Fore.GREEN + Style.BRIGHT}[ Total Balance {total_balance} ]{Style.RESET_ALL}"
+                    f"{Fore.GREEN + Style.BRIGHT}[ Total Balance {total_balance} $TOMA ]{Style.RESET_ALL}"
                 )
                 self.print_timestamp(f"{Fore.CYAN + Style.BRIGHT}[ Restarting At {(datetime.now().astimezone() + timedelta(seconds=sleep_time)).strftime('%X %Z')} ]{Style.RESET_ALL}")
 
