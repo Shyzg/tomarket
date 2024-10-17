@@ -200,7 +200,6 @@ class Tomarket:
                     response.raise_for_status()
                     rank_evaluate = await response.json()
                     if rank_evaluate['status'] == 0:
-                        self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Rank Evaluated ]{Style.RESET_ALL}")
                         return await self.rank_create(token=token)
                     elif rank_evaluate['status'] == 500 and rank_evaluate['message'] == 'User has a rank':
                         return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ User Has A Rank ]{Style.RESET_ALL}")
@@ -222,11 +221,6 @@ class Tomarket:
                     rank_create = await response.json()
                     if rank_create['status'] == 0:
                         if rank_create['data']['isCreated']:
-                            self.print_timestamp(
-                                f"{Fore.GREEN + Style.BRIGHT}[ Rank Created ]{Style.RESET_ALL}"
-                                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                                f"{Fore.BLUE + Style.BRIGHT}[ Current Rank {rank_create['data']['currentRank']['name']} ]{Style.RESET_ALL}"
-                            )
                             return await self.rank_upgrade(token=token, stars=rank_create['data']['unusedStars'])
                     elif rank_create['status'] == 427 and rank_create['message'] == 'Rank value has already been initialized':
                         return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Rank Value Has Already Been Initialized ]{Style.RESET_ALL}")
@@ -251,7 +245,7 @@ class Tomarket:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     rank_upgrade = await response.json()
                     if rank_upgrade['status'] == 0:
-                        return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ Successfully Upgrade Rank With {stars} Stars ]{Style.RESET_ALL}")
+                        return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Successfully Use {stars} Stars ]{Style.RESET_ALL}")
                     elif rank_upgrade['status'] == 500 and rank_upgrade['message'] == 'You dose not have a rank':
                         return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ You Doesn\'t Have A Rank ]{Style.RESET_ALL}")
                     elif rank_upgrade['status'] == 500 and rank_upgrade['message'] == f'You dose not have enough stars {stars}':
@@ -347,12 +341,7 @@ class Tomarket:
                         response.raise_for_status()
                         game_play = await response.json()
                         if game_play['status'] == 0:
-                            self.print_timestamp(
-                                f"{Fore.BLUE + Style.BRIGHT}[ Game Started ]{Style.RESET_ALL}"
-                                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                                f"{Fore.YELLOW + Style.BRIGHT}[ Please Wait ~30 Seconds ]{Style.RESET_ALL}"
-                            )
-                            await asyncio.sleep(33)
+                            await asyncio.sleep(random.randint(33, 35))
                             await self.game_claim(token=token, points=random.randint(6000, 6001))
                         elif game_play['status'] == 500 and game_play['message'] == 'no chance':
                             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ No Chance To Start Game ]{Style.RESET_ALL}")
@@ -400,49 +389,48 @@ class Tomarket:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
                     tasks_list = await response.json()
-                    await self.process_category(tasks_list['data'], token)
+                    async def process_task_data(data):
+                        for key, value in data.items():
+                            if isinstance(value, list):
+                                await asyncio.sleep(3)
+                                await self.process_tasks(token, value)
+                            elif isinstance(value, dict):
+                                await process_task_data(value)
+                    await process_task_data(tasks_list['data'])
         except ClientResponseError as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Tasks: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Tasks: {str(e)} ]{Style.RESET_ALL}")
 
-    async def process_category(self, category_data, token):
-        for category in category_data:
-            if isinstance(category_data[category], list):
-                for task in category_data[category]:
-                    await self.process_task(task, token)
-            elif isinstance(category_data[category], dict):
-                await self.process_category(category_data[category], token)
-
-    async def process_task(self, task, token):
-        if (
-            ('walletAddress' in task['handleFunc'] or 'boost' in task['handleFunc'] or 'checkInvite' in task['handleFunc']) or
-            ('classmate' in task['tag']) or
-            ('classmate' in task['type'].lower())
-        ): return
-        wait_second = task.get('waitSecond', 0)
-        if task['status'] == 0:
-            await self.tasks_start(
-                token=token,
-                task_id=task['taskId'],
-                task_title=task['title'],
-                task_score=task['score'],
-                task_waitsecond=wait_second
-            )
-        elif task['status'] == 1:
-            await self.tasks_check(
-                token=token,
-                task_id=task['taskId'],
-                task_title=task['title'],
-                task_score=task['score']
-            )
-        elif task['status'] == 2:
-            await self.tasks_claim(
-                token=token,
-                task_id=task['taskId'],
-                task_title=task['title'],
-                task_score=task['score']
-            )
+    async def process_tasks(self, token, tasks):
+        for task in tasks:
+            if 'walletAddress' in task['handleFunc']: continue
+            wait_second = task.get('waitSecond', 0)
+            if task['status'] == 0:
+                await self.tasks_start(
+                    token=token,
+                    task_id=task['taskId'],
+                    task_title=task['title'],
+                    task_score=task['score'],
+                    task_waitsecond=wait_second
+                )
+                await asyncio.sleep(3)
+            elif task['status'] == 1:
+                await self.tasks_check(
+                    token=token,
+                    task_id=task['taskId'],
+                    task_title=task['title'],
+                    task_score=task['score']
+                )
+                await asyncio.sleep(3)
+            elif task['status'] == 2:
+                await self.tasks_claim(
+                    token=token,
+                    task_id=task['taskId'],
+                    task_title=task['title'],
+                    task_score=task['score']
+                )
+                await asyncio.sleep(3)
 
     async def tasks_start(
         self,
@@ -467,12 +455,7 @@ class Tomarket:
                     tasks_start = await response.json()
                     if tasks_start['status'] == 0:
                         if tasks_start['data']['status'] == 1:
-                            self.print_timestamp(
-                                f"{Fore.BLUE + Style.BRIGHT}[ {task_title} Started ]{Style.RESET_ALL}"
-                                f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                                f"{Fore.YELLOW + Style.BRIGHT}[ Please Wait ~{task_waitsecond} ]{Style.RESET_ALL}"
-                            )
-                            await asyncio.sleep(task_waitsecond + random.randint(3, 5))
+                            await asyncio.sleep(task_waitsecond + 3)
                             return await self.tasks_check(
                                 token=token,
                                 task_id=task_id,
@@ -480,12 +463,15 @@ class Tomarket:
                                 task_score=task_score
                             )
                         elif tasks_start['data']['status'] == 2:
+                            await asyncio.sleep(3)
                             return await self.tasks_claim(
                                 token=token,
                                 task_id=task_id,
                                 task_title=task_title,
                                 task_score=task_score
                             )
+                    elif tasks_start['status'] == 400 and tasks_start['message'] == 'claim throttle':
+                        return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Claim Throttle While Start {task_title} ]{Style.RESET_ALL}")
                     elif tasks_start['status'] == 500 and tasks_start['message'] == 'Handle user\'s task error':
                         return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Finish {task_title} By Itself ]{Style.RESET_ALL}")
                     elif tasks_start['status'] == 500 and tasks_start['message'] == 'Task handle is not exist':
@@ -517,12 +503,15 @@ class Tomarket:
                     tasks_check = await response.json()
                     if tasks_check['status'] == 0:
                         if tasks_check['data']['status'] == 2:
+                            await asyncio.sleep(3)
                             return await self.tasks_claim(
                                 token=token,
                                 task_id=task_id,
                                 task_title=task_title,
                                 task_score=task_score
                             )
+                    if tasks_check['status'] == 500 and tasks_check['message'] == 'Error: Invalid init user data.':
+                        return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Invalid Init User Data While Check {task_title} ]{Style.RESET_ALL}")
         except ClientResponseError as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Check Tasks: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
@@ -548,15 +537,14 @@ class Tomarket:
                 async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                     response.raise_for_status()
                     tasks_claim = await response.json()
-                    if 'status' in tasks_claim:
-                        if tasks_claim['status'] == 0:
-                            return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {task_score} $TOMA From {task_title} ]{Style.RESET_ALL}")
-                        elif tasks_claim['status'] == 500 and tasks_claim['message'] == 'You haven\'t start this task':
-                            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ You Haven\'t Start {task_title} ]{Style.RESET_ALL}")
-                        elif tasks_claim['status'] == 500 and tasks_claim['message'] == 'You haven\'t finished this task':
-                            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ You Haven\'t Finished {task_title} ]{Style.RESET_ALL}")
-                        elif tasks_claim['status'] == 500 and tasks_claim['message'] == 'Task is not within the valid time':
-                            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {task_title} Isn\'t Within The Valid Time ]{Style.RESET_ALL}")
+                    if tasks_claim['status'] == 0:
+                        return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {task_score} $TOMA From {task_title} ]{Style.RESET_ALL}")
+                    elif tasks_claim['status'] == 500 and tasks_claim['message'] == 'You haven\'t start this task':
+                        return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ You Haven\'t Start {task_title} ]{Style.RESET_ALL}")
+                    elif tasks_claim['status'] == 500 and tasks_claim['message'] == 'You haven\'t finished this task':
+                        return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ You Haven\'t Finished {task_title} ]{Style.RESET_ALL}")
+                    elif tasks_claim['status'] == 500 and tasks_claim['message'] == 'Task is not within the valid time':
+                        return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {task_title} Isn\'t Within The Valid Time ]{Style.RESET_ALL}")
         except ClientResponseError as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Tasks Claim: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
@@ -605,9 +593,9 @@ class Tomarket:
                                         answer=answer['tomarket']['answer']
                                     )
         except ClientResponseError as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Fetching Tasks Puzzle: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Fetching Tasks Puzzle: {str(e)} ]{Style.RESET_ALL}")
 
     async def tasks_puzzle_claim(
         self,
@@ -633,15 +621,16 @@ class Tomarket:
                     response.raise_for_status()
                     tasks_puzzle_claim = await response.json()
                     if tasks_puzzle_claim['status'] == 0:
-                        if tasks_puzzle_claim['data']['status'] == 1 and tasks_puzzle_claim['data']['message'] == 'Must complement relation task':
-                            return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ You\'re Missing A Step, Look At The Task Page! ]{Style.RESET_ALL}")
-                        if tasks_puzzle_claim['data']['status'] == 2 and tasks_puzzle_claim['data']['message'] == 'The result is incorrect':
-                            return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Oh No, That\'s Incorrect. Watch The Video Carefully ]{Style.RESET_ALL}")
+                        if 'status' in tasks_puzzle_claim['data']:
+                            if tasks_puzzle_claim['data']['status'] == 1 and tasks_puzzle_claim['data']['message'] == 'Must complement relation task':
+                                return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ You\'re Missing A Step, Look At The Task Page! ]{Style.RESET_ALL}")
+                            if tasks_puzzle_claim['data']['status'] == 2 and tasks_puzzle_claim['data']['message'] == 'The result is incorrect':
+                                return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Oh No, That\'s Incorrect. Watch The Video Carefully ]{Style.RESET_ALL}")
                         return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {puzzle_star} Tomarket Stars, {puzzle_games} Ticket, And {puzzle_score} $TOMA From {puzzle_name} ]{Style.RESET_ALL}")
         except ClientResponseError as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Tasks Puzzle Claim: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
-            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Claim Tasks: {str(e)} ]{Style.RESET_ALL}")
+            return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Tasks Puzzle Claim: {str(e)} ]{Style.RESET_ALL}")
 
     async def spin_assets(self, token: str):
         url = 'https://api-web.tomarket.ai/tomarket-game/v1/spin/assets'
@@ -679,13 +668,9 @@ class Tomarket:
                     async with session.post(url=url, headers=headers, data=data, ssl=False) as response:
                         response.raise_for_status()
                         spin_raffle = await response.json()
-                        if spin_raffle['status'] == 0:
-                            if 'isPassed' in spin_raffle['data']:
-                                if not spin_raffle['data']['isPassed']: return None
+                        if spin_raffle['status'] == 0 and 'results' in spin_raffle['data']:
                             for result in spin_raffle['data']['results']:
                                 self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {result['amount']} {result['type']} From Raffle Spin ]{Style.RESET_ALL}")
-                        elif spin_raffle['status'] == 400 and spin_raffle['message'] == 'Please wait 2 seconds before spinning again.':
-                            self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Please Wait 2 Seconds Before Spinning Again ]{Style.RESET_ALL}")
                         elif spin_raffle['status'] == 400 and spin_raffle['message'] == 'Max 3 spins per day using Tomarket Stars.':
                             return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Max 3 Spins Per Day Using Tomarket Stars ]{Style.RESET_ALL}")
                         elif spin_raffle['status'] == 500 and spin_raffle['message'] == 'Not enough ticket_spin_1 ticket':
@@ -708,9 +693,7 @@ class Tomarket:
                         f"{Fore.CYAN + Style.BRIGHT}[ {first_name} ]{Style.RESET_ALL}"
                     )
                     await self.daily_claim(token=token)
-                    await asyncio.sleep(3)
                     balance = await self.user_balance(token=token)
-                    await asyncio.sleep(3)
                     if balance is not None:
                         self.print_timestamp(
                             f"{Fore.GREEN + Style.BRIGHT}[ {int(float(balance['data']['available_balance']))} $TOMA ]{Style.RESET_ALL}"
@@ -726,6 +709,7 @@ class Tomarket:
                         else:
                             await self.farm_start(token=token)
                         total_balance += int(float(balance['data']['available_balance']))
+                    await asyncio.sleep(3)
 
                 for (token, first_name) in accounts:
                     self.print_timestamp(
