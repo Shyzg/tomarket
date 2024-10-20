@@ -772,7 +772,7 @@ class Tomarket:
 
 if __name__ == '__main__':
     try:
-        if sys.platform == 'win32':
+        if hasattr(asyncio, 'WindowsSelectorEventLoopPolicy'):
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
         init(autoreset=True)
@@ -798,7 +798,7 @@ if __name__ == '__main__':
             lines_per_file = int(input(
                 f"{Fore.BLUE + Style.BRIGHT}[ {datetime.now().astimezone().strftime('%x %X %Z')} ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
-                f"{Fore.YELLOW + Style.BRIGHT}[ How Much Accounts In 'accounts-*.json'? ]{Style.RESET_ALL}"
+                f"{Fore.YELLOW + Style.BRIGHT}[ How Much Accounts Each 'accounts-*.json'? ]{Style.RESET_ALL}"
                 f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
             ))
             if lines_per_file <= 0:

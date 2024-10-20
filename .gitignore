@@ -6,3 +6,4 @@ bot
 .DS_Store
 *.json
 !queries.txt
+!requirements.txt
