@@ -2,4 +2,4 @@ aiohttp==3.10.8
 Brotli==1.1.0
 colorama==0.4.6
 fake-useragent==1.5.1
-Faker==27.0.0
+Faker==30.8.0

@@ -26,10 +26,12 @@ class Tomarket:
             'User-Agent': FakeUserAgent().random
         }
 
-    def clear_terminal(self):
+    @staticmethod
+    def clear_terminal():
         os.system('cls' if os.name == 'nt' else 'clear')
 
-    def print_timestamp(self, message):
+    @staticmethod
+    def print_timestamp(message):
         print(
             f"{Fore.BLUE + Style.BRIGHT}[ {datetime.now().astimezone().strftime('%x %X %Z')} ]{Style.RESET_ALL}"
             f"{Fore.WHITE + Style.BRIGHT} | {Style.RESET_ALL}"
@@ -368,7 +370,7 @@ class Tomarket:
                         return self.print_timestamp(f"{Fore.GREEN + Style.BRIGHT}[ You\'ve Got {game_claim['data']['points']} $TOMA From Game Play ]{Style.RESET_ALL}")
                     elif game_claim['status'] == 500 and game_claim['message'] == 'game not start':
                         self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Game Not Start ]{Style.RESET_ALL}")
-                        return await self.play_game(token=token)
+                        return await self.game_play(token=token)
         except ClientResponseError as e:
             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Game Claim: {str(e)} ]{Style.RESET_ALL}")
         except Exception as e:
@@ -404,7 +406,7 @@ class Tomarket:
 
     async def process_tasks(self, token, tasks):
         for task in tasks:
-            if 'walletAddress' in task['handleFunc']: continue
+            if 'walletAddress' in task['handleFunc'] and 'class'.lower() in task['type']: continue
             wait_second = task.get('waitSecond', 0)
             if task['status'] == 0:
                 await self.tasks_start(
@@ -675,10 +677,10 @@ class Tomarket:
                             return self.print_timestamp(f"{Fore.YELLOW + Style.BRIGHT}[ Max 3 Spins Per Day Using Tomarket Stars ]{Style.RESET_ALL}")
                         elif spin_raffle['status'] == 500 and spin_raffle['message'] == 'Not enough ticket_spin_1 ticket':
                             return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ Not Enough Free Spin Tickets ]{Style.RESET_ALL}")
-            except ClientResponseError as e:
-                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Spin Raffle: {str(e)} ]{Style.RESET_ALL}")
-            except Exception as e:
-                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Spin Raffle: {str(e)} ]{Style.RESET_ALL}")
+            except ClientResponseError as error:
+                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An HTTP Error Occurred While Spin Raffle: {str(error)} ]{Style.RESET_ALL}")
+            except Exception as error:
+                return self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ An Unexpected Error Occurred While Spin Raffle: {str(error)} ]{Style.RESET_ALL}")
 
     async def main(self, accounts):
         while True:
@@ -766,8 +768,8 @@ class Tomarket:
 
                 await asyncio.sleep(sleep_time)
                 self.clear_terminal()
-            except Exception as e:
-                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {str(e)} ]{Style.RESET_ALL}")
+            except Exception as error:
+                self.print_timestamp(f"{Fore.RED + Style.BRIGHT}[ {str(error)} ]{Style.RESET_ALL}")
                 continue
 
 if __name__ == '__main__':
