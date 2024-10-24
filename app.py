@@ -406,7 +406,7 @@ class Tomarket:
 
     async def process_tasks(self, token, tasks):
         for task in tasks:
-            if 'walletAddress' in task['handleFunc'] and 'class'.lower() in task['type']: continue
+            if 'walletAddress' in task['handleFunc'] or 'class'.lower() in task['type']: continue
             wait_second = task.get('waitSecond', 0)
             if task['status'] == 0:
                 await self.tasks_start(
